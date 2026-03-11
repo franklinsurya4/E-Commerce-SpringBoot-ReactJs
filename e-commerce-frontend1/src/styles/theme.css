@@ -1,0 +1,60 @@
+/* GLOBAL RESET */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+/* ─── Ensure page scrolling ───────────────────── */
+html, body {
+  height: 100%;
+  overflow-y: auto;  /* allows vertical scrolling */
+  scroll-behavior: smooth; /* optional: smooth scrolling */
+}
+
+/* LIGHT MODE */
+
+.app{
+  background:#f8fafc;
+  color:#111827;
+  min-height:100vh;
+  transition:background 0.3s,color 0.3s;
+}
+
+/* DARK MODE */
+
+.app.dark{
+  background:#0f172a;
+  color:#e2e8f0;
+}
+
+/* make all sections inherit */
+
+section,div,main{
+  background:inherit;
+  color:inherit;
+}
+
+/* LIGHT MODE */
+
+.app{
+  background:#f8fafc;
+  color:#111827;
+  min-height:100vh;
+  transition:background 0.3s,color 0.3s;
+}
+
+/* DARK MODE */
+
+body.dark .app{
+  background:#0f172a;
+  color:#e2e8f0;
+}
+
+/* inherit theme */
+
+section,div,main{
+  background:inherit;
+  color:inherit;
+}

@@ -1,0 +1,64 @@
+/* Page container */
+.categories-page {
+  padding: 40px;
+  background-color: #cabcbc;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow-y: auto;            /* allow vertical scrolling */
+}
+
+/* Page title */
+.categories-page h2 {
+  text-align: center;
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 30px;
+  letter-spacing: 1px;
+}
+
+/* 4x4 Grid for categories */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columns */
+  gap: 25px;
+  justify-items: center;
+}
+
+/* Individual category card */
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background-color: #fff;
+  padding: 15px;
+  width: 100%;
+  max-width: 250px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+/* Category image */
+.category-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+/* Category name */
+.category-card p {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0;
+  color: #444;
+}

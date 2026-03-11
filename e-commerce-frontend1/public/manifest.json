@@ -1,0 +1,15 @@
+{
+  "short_name": "Online shopping new txt",
+  "name": "Online shopping new txt",
+  "icons": [
+    {
+      "src": "https://static.vecteezy.com/system/resources/previews/006/547/145/original/creative-modern-abstract-ecommerce-logo-design-colorful-gradient-online-shopping-bag-logo-design-template-free-vector.jpg",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
