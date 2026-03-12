@@ -1,0 +1,354 @@
+/* ── Orders Page ── */
+.orders-page {
+  min-height: 100vh;
+  padding: 36px 48px 64px;
+  background-color: #cabcbc;
+  color: #222;
+  font-family: 'Sora', 'DM Sans', sans-serif;
+}
+
+@media (max-width: 900px) {
+  .orders-page {
+    padding: 24px 20px 48px;
+  }
+}
+
+/* ── Header ── */
+.orders-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #1e1e2a;
+  padding-bottom: 20px;
+}
+
+.orders-title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #514c4c;
+  margin: 0;
+}
+
+.orders-count {
+  font-size: 0.85rem;
+  color: #6b6b80;
+  font-weight: 500;
+}
+
+/* ── Email Lookup ── */
+.orders-email-lookup {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  max-width: 520px;
+}
+
+.orders-email-lookup input {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  color: #222;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-family: 'Sora', 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.orders-email-lookup input:focus {
+  border-color: #5b4bff;
+}
+
+.orders-email-lookup button {
+  padding: 10px 22px;
+  background: #5b4bff;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: 'Sora', 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.orders-email-lookup button:hover:not(:disabled) {
+  background: #4a3bef;
+}
+
+.orders-email-lookup button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Error Messages ── */
+.orders-err {
+  color: #ef4444;
+  font-size: 0.82rem;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+/* ── Empty State ── */
+.orders-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 72px 24px;
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  text-align: center;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.orders-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.orders-empty h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 8px;
+}
+
+.orders-empty p {
+  font-size: 0.85rem;
+  color: #6b6b80;
+  margin: 0 0 24px;
+}
+
+.orders-browse-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  background: #5b4bff;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.orders-browse-btn:hover {
+  background: #4a3bef;
+}
+
+/* ── Orders List ── */
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 1000px;
+}
+
+/* ── Order Card ── */
+.order-card {
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.order-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Card Header ── */
+.order-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.order-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.order-id {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.order-date {
+  font-size: 0.75rem;
+  color: #6b6b80;
+}
+
+/* ── Status Badge ── */
+.order-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+
+.order-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Customer Info ── */
+.order-customer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fdfcfc;
+}
+
+.order-customer-name,
+.order-customer-email,
+.order-customer-address {
+  font-size: 0.8rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── Items Grid ── */
+.order-items-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* ── Item Card ── */
+.order-item-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f7f7fb;
+  border: 1px solid #ebebf5;
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-width: 200px;
+  flex: 1;
+}
+
+.order-item-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ececec;
+  flex-shrink: 0;
+}
+
+.order-item-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.order-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.order-item-cat {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5b4bff;
+}
+
+.order-item-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #222;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.order-item-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.order-item-price {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.order-item-qty {
+  font-size: 0.78rem;
+  color: #6b6b80;
+}
+
+/* ── Card Footer ── */
+.order-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 12px 18px;
+  background: #fafafa;
+}
+
+.order-total-label {
+  font-size: 0.8rem;
+  color: #6b6b80;
+  margin-right: auto;
+}
+
+.order-total-amount {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #222;
+}
+
+/* ── Cancel Button ── */
+.order-cancel-btn {
+  padding: 8px 18px;
+  background: none;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  color: #ef4444;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: 'Sora', 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.order-cancel-btn:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+.order-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
