@@ -9,21 +9,22 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     @Autowired
-    UserRepository repo;
+    UserRepository userRepository;
 
-    public User signin(User user){
-
-        return repo.save(user);
+    // Register new user
+    public User signin(User user) {
+        return userRepository.save(user);
     }
 
-    public User login(String email, String password){
+    // Login - validate email + password
+    public User login(String email, String password) {
+        return userRepository.findByEmail(email)
+                .filter(u -> u.getPassword().equals(password))
+                .orElse(null);
+    }
 
-        User user = repo.findByEmail(email).orElse(null);
-
-        if(user!=null && user.getPassword().equals(password)){
-            return user;
-        }
-
-        return null;
+    // ✅ NEW: Get user by email (used by /auth/me endpoint)
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
     }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { markAsDelivered, markAsShipped } from "../api/api";   // ✅ import markAsShipped
 import "../styles/Orders.css";
 
 const PLACEHOLDER = "https://via.placeholder.com/80?text=Product";
@@ -56,7 +57,7 @@ export default function Orders() {
     orders = [],
     loadOrdersByEmail,
     cancelOrder,
-    ordersEmail,   // ✅ persisted in localStorage via CartContext
+    ordersEmail,
   } = useCart();
 
   const location = useLocation();
@@ -64,68 +65,83 @@ export default function Orders() {
   const [emailInput,   setEmailInput]   = useState("");
   const [loading,      setLoading]      = useState(false);
   const [fetchErr,     setFetchErr]     = useState("");
-  const [cancelErr,    setCancelErr]    = useState("");
+  const [actionErr,    setActionErr]    = useState("");
   const [cancellingId, setCancellingId] = useState(null);
+  const [deliveringId, setDeliveringId] = useState(null);
+  const [shippingId,   setShippingId]   = useState(null);   // ✅ NEW
 
-  // ✅ on mount — restore email from 3 sources in priority order:
-  // 1. navigation state (redirect from Cart)
-  // 2. ordersEmail from context/localStorage (from last session)
-  // 3. nothing — user must type
+  // Restore email on mount
   useEffect(() => {
     const emailFromNav = location.state?.email;
-
     if (emailFromNav) {
-      // ✅ came from Cart page after placing order
       setEmailInput(emailFromNav);
       fetchOrders(emailFromNav);
     } else if (ordersEmail) {
-      // ✅ refresh — email was saved in localStorage, restore + reload
       setEmailInput(ordersEmail);
-      // ✅ orders are already in state from localStorage
-      // only re-fetch from backend if state is empty
       if (orders.length === 0) {
         fetchOrders(ordersEmail);
       }
     }
-  }, []); // ✅ run once on mount only
+  }, []);
 
   const fetchOrders = async (overrideEmail) => {
     const target = (overrideEmail || emailInput).trim();
     if (!target) { setFetchErr("Please enter your email."); return; }
-
     setLoading(true);
     setFetchErr("");
     try {
-      await loadOrdersByEmail(target);   // ✅ also saves to localStorage in CartContext
+      await loadOrdersByEmail(target);
     } catch (e) {
-      console.error(e);
-      setFetchErr(
-        e?.response?.data?.message ||
-        e?.message ||
-        "Could not load orders. Please try again."
-      );
+      setFetchErr(e?.response?.data?.message || e?.message || "Could not load orders.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = async (orderId) => {
-    setCancelErr("");
+    setActionErr("");
     setCancellingId(orderId);
     try {
-      await cancelOrder(orderId);  // ✅ also updates localStorage in CartContext
+      await cancelOrder(orderId);
     } catch (e) {
-      console.error(e);
-      setCancelErr(`Could not cancel order #${orderId}. Please try again.`);
+      setActionErr(`Could not cancel order #${orderId}. Please try again.`);
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  // ✅ NEW: Mark as Shipped — moves CONFIRMED → SHIPPED
+  const handleShip = async (orderId) => {
+    setActionErr("");
+    setShippingId(orderId);
+    try {
+      await markAsShipped(orderId);
+      await loadOrdersByEmail(ordersEmail || emailInput);
+    } catch (e) {
+      setActionErr(`Could not mark order #${orderId} as shipped. Please try again.`);
+    } finally {
+      setShippingId(null);
+    }
+  };
+
+  // Mark as Delivered — moves SHIPPED → DELIVERED
+  const handleDeliver = async (orderId) => {
+    setActionErr("");
+    setDeliveringId(orderId);
+    try {
+      await markAsDelivered(orderId);
+      await loadOrdersByEmail(ordersEmail || emailInput);
+    } catch (e) {
+      setActionErr(`Could not mark order #${orderId} as delivered. Please try again.`);
+    } finally {
+      setDeliveringId(null);
     }
   };
 
   return (
     <div className="orders-page">
 
-      {/* Page header */}
+      {/* Header */}
       <div className="orders-header">
         <h1 className="orders-title">My Orders</h1>
         {ordersEmail && (
@@ -150,9 +166,9 @@ export default function Orders() {
       </div>
 
       {fetchErr  && <p className="orders-err">{fetchErr}</p>}
-      {cancelErr && <p className="orders-err">{cancelErr}</p>}
+      {actionErr && <p className="orders-err">{actionErr}</p>}
 
-      {/* Loading spinner */}
+      {/* Spinner */}
       {loading && (
         <div className="orders-loading">
           <div className="orders-spinner" />
@@ -160,7 +176,7 @@ export default function Orders() {
         </div>
       )}
 
-      {/* Empty state — only show after a fetch was attempted */}
+      {/* Empty state */}
       {!loading && ordersEmail && orders.length === 0 && (
         <div className="orders-empty">
           <div className="orders-empty-icon">📦</div>
@@ -172,7 +188,7 @@ export default function Orders() {
         </div>
       )}
 
-      {/* Orders list — shows immediately from localStorage on refresh */}
+      {/* Orders list */}
       {!loading && orders.length > 0 && (
         <div className="orders-list">
           {orders.map((order) => (
@@ -194,7 +210,7 @@ export default function Orders() {
                 <StatusBadge status={order.status} />
               </div>
 
-              {/* Customer */}
+              {/* Customer info */}
               <div className="order-customer">
                 <span className="order-customer-name">👤 {order.customerName}</span>
                 <span className="order-customer-email">✉️ {order.customerEmail}</span>
@@ -203,7 +219,7 @@ export default function Orders() {
                 )}
               </div>
 
-              {/* Items with product image */}
+              {/* Items */}
               <div className="order-items-grid">
                 {(order.items || []).map((item, i) => (
                   <div key={i} className="order-item-card">
@@ -234,15 +250,43 @@ export default function Orders() {
                 <span className="order-total-amount">
                   ₹{order.totalAmount?.toLocaleString("en-IN")}
                 </span>
-                {order.status !== "CANCELLED" && (
-                  <button
-                    className="order-cancel-btn"
-                    disabled={cancellingId === order.id}
-                    onClick={() => handleCancel(order.id)}
-                  >
-                    {cancellingId === order.id ? "Cancelling…" : "Cancel Order"}
-                  </button>
-                )}
+
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+
+                  {/* ✅ Mark as Shipped — CONFIRMED only */}
+                  {order.status === "CONFIRMED" && (
+                    <button
+                      className="order-ship-btn"
+                      disabled={shippingId === order.id}
+                      onClick={() => handleShip(order.id)}
+                    >
+                      {shippingId === order.id ? "Updating…" : "🚚 Mark as Shipped"}
+                    </button>
+                  )}
+
+                  {/* Mark as Delivered — SHIPPED only */}
+                  {order.status === "SHIPPED" && (
+                    <button
+                      className="order-deliver-btn"
+                      disabled={deliveringId === order.id}
+                      onClick={() => handleDeliver(order.id)}
+                    >
+                      {deliveringId === order.id ? "Updating…" : "✓ Mark as Delivered"}
+                    </button>
+                  )}
+
+                  {/* Cancel — hide if delivered or cancelled */}
+                  {order.status !== "CANCELLED" && order.status !== "DELIVERED" && (
+                    <button
+                      className="order-cancel-btn"
+                      disabled={cancellingId === order.id}
+                      onClick={() => handleCancel(order.id)}
+                    >
+                      {cancellingId === order.id ? "Cancelling…" : "Cancel Order"}
+                    </button>
+                  )}
+
+                </div>
               </div>
 
             </div>

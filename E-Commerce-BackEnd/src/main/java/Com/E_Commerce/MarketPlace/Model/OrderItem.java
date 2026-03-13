@@ -1,5 +1,6 @@
 package Com.E_Commerce.MarketPlace.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,6 +19,7 @@ public class OrderItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     @ToString.Exclude
+    @JsonIgnore
     private Order order;
 
     @Column(nullable = false)

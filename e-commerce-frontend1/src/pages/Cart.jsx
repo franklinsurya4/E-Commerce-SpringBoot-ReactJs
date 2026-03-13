@@ -76,7 +76,7 @@ export default function Cart() {
 
       {/* ── HEADER ── */}
       <div className="cart-header">
-        <h1 className="cart-title">Shopping Cart</h1>
+        <h1 className="cart-title">My Cart</h1>
         <span className="cart-count">
           {cartItems.length} item{cartItems.length !== 1 ? "s" : ""}
         </span>

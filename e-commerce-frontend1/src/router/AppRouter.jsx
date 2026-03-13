@@ -7,75 +7,87 @@ import ProductDetails from "../components/ProductDetails";
 
 import Cart from "../pages/Cart";
 import Orders from "../pages/Orders";
+import Account from "../pages/Account";
 
 import Login from "../pages/Login";
 import Signin from "../pages/Signin";
 
 import ProtectedRoute from "./ProtectedRoute";
 
-const AppRouter = () => (
+function AppRouter() {
+  return (
+    <Routes>
 
-  <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signin />} />
 
-    <Route path="/login" element={<Login />} />
+      {/* Protected Routes */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        }
+      />
 
-    <Route path="/signup" element={<Signin />} />
+      <Route
+        path="/categories"
+        element={
+          <ProtectedRoute>
+            <Categories />
+          </ProtectedRoute>
+        }
+      />
 
-    <Route
-      path="/"
-      element={
-        <ProtectedRoute>
-          <Home />
-        </ProtectedRoute>
-      }
-    />
+      <Route
+        path="/category/:categorySlug"
+        element={
+          <ProtectedRoute>
+            <CategoryPage />
+          </ProtectedRoute>
+        }
+      />
 
-    <Route
-      path="/categories"
-      element={
-        <ProtectedRoute>
-          <Categories />
-        </ProtectedRoute>
-      }
-    />
+      <Route
+        path="/product/:productId"
+        element={
+          <ProtectedRoute>
+            <ProductDetails />
+          </ProtectedRoute>
+        }
+      />
 
-    <Route
-      path="/category/:categorySlug"
-      element={
-        <ProtectedRoute>
-          <CategoryPage />
-        </ProtectedRoute>
-      }
-    />
+      <Route
+        path="/cart"
+        element={
+          <ProtectedRoute>
+            <Cart />
+          </ProtectedRoute>
+        }
+      />
 
-    <Route
-      path="/product/:productId"
-      element={
-        <ProtectedRoute>
-          <ProductDetails />
-        </ProtectedRoute>
-      }
-    />
+      <Route
+        path="/orders"
+        element={
+          <ProtectedRoute>
+            <Orders />
+          </ProtectedRoute>
+        }
+      />
 
-    <Route
-      path="/cart"
-      element={
-        <ProtectedRoute>
-          <Cart />
-        </ProtectedRoute>
-      }
-    />
+      <Route
+        path="/account"
+        element={
+          <ProtectedRoute>
+            <Account />
+          </ProtectedRoute>
+        }
+      />
 
-    <Route
-      path="/orders"
-      element={
-        <ProtectedRoute>
-          <Orders />
-        </ProtectedRoute>
-      }
-    />
-
-  </Routes>
-);
+    </Routes>
+  );
+}
 
 export default AppRouter;

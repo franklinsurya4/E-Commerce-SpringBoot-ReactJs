@@ -40,12 +40,12 @@ public class OrderService {
 
         order.setItems(items);
         Order saved = orderRepository.save(order);
-        emailService.sendOrderConfirmation(saved);
+        emailService.sendOrderConfirmation(saved);   // ✅ CONFIRMED email
         return saved;
     }
 
     public List<Order> getOrdersByEmail(String email) {
-        return orderRepository.findByCustomerEmailOrderByPlacedAtDesc(email);
+        return orderRepository.findByCustomerEmailIgnoreCaseOrderByPlacedAtDesc(email);
     }
 
     public List<Order> getAllOrders() {
@@ -53,12 +53,32 @@ public class OrderService {
     }
 
     @Transactional
+    public Order shipOrder(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(Order.OrderStatus.SHIPPED);
+        Order saved = orderRepository.save(order);
+        emailService.sendOrderShipped(saved);        // ✅ SHIPPED email
+        return saved;
+    }
+
+    @Transactional
+    public Order deliverOrder(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(Order.OrderStatus.DELIVERED);
+        Order saved = orderRepository.save(order);
+        emailService.sendOrderDelivered(saved);      // ✅ DELIVERED email
+        return saved;
+    }
+
+    @Transactional
     public Order cancelOrder(Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
         order.setStatus(Order.OrderStatus.CANCELLED);
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+        emailService.sendOrderCancelled(saved);      // ✅ CANCELLED email
+        return saved;
     }
-
-
 }
