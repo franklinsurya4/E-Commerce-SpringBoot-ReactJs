@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";   // ✅ new
 import "../styles/ProductDetails.css";
 import "../styles/ProductDetailsExtra.css";
 
@@ -42,7 +43,6 @@ const BackIcon = () => (
 /* ── Quick Order Modal ── */
 const OrderModal = ({ product, onClose, onSuccess }) => {
   const { addOrder } = useCart();
-
   const [name,    setName]    = useState("");
   const [email,   setEmail]   = useState("");
   const [address, setAddress] = useState("");
@@ -51,35 +51,23 @@ const OrderModal = ({ product, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!name.trim() || !email.trim() || !address.trim()) {
       setErr("Please fill in all fields.");
       return;
     }
-
     setErr("");
     setPlacing(true);
-
-    // ✅ cart-shaped item — context addOrder maps these to backend fields
     const singleItem = [{
-      id:       product.id,
-      name:     product.name,
-      image:    product.image || product.imageUrl || "",
-      price:    product.price,
-      quantity: 1,
+      id: product.id, name: product.name,
+      image: product.image || product.imageUrl || "",
+      price: product.price, quantity: 1,
       category: product.category || "",
     }];
-
     try {
-      await addOrder({ name, email, address }, singleItem); // ✅ correct signature
+      await addOrder({ name, email, address }, singleItem);
       onSuccess(email);
     } catch (error) {
-      console.error("Quick order error:", error);
-      setErr(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Order failed. Try again."
-      );
+      setErr(error?.response?.data?.message || error?.message || "Order failed.");
     } finally {
       setPlacing(false);
     }
@@ -90,47 +78,19 @@ const OrderModal = ({ product, onClose, onSuccess }) => {
       <div className="pd-modal-box" onClick={e => e.stopPropagation()}>
         <button className="pd-modal-close" onClick={onClose}>✕</button>
         <h3 className="pd-modal-title">Quick Order</h3>
-
         <div className="pd-modal-product">
-          <img
-            src={product.image || product.imageUrl || "https://via.placeholder.com/60"}
-            alt={product.name}
-          />
+          <img src={product.image || product.imageUrl || "https://via.placeholder.com/60"} alt={product.name} />
           <div>
             <p className="pd-modal-pname">{product.name}</p>
-            <p className="pd-modal-pprice">
-              ₹{product.price?.toLocaleString("en-IN")}
-            </p>
+            <p className="pd-modal-pprice">₹{product.price?.toLocaleString("en-IN")}</p>
           </div>
         </div>
-
         <form className="pd-modal-form" onSubmit={handleSubmit}>
-          <input
-            required
-            placeholder="Full Name"
-            value={name}
-            onChange={e => setName(e.target.value)}
-          />
-          <input
-            required
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-          />
-          <textarea
-            required
-            placeholder="Delivery Address"
-            value={address}
-            onChange={e => setAddress(e.target.value)}
-            rows={2}
-          />
+          <input required placeholder="Full Name"  value={name}    onChange={e => setName(e.target.value)} />
+          <input required type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+          <textarea required placeholder="Delivery Address" value={address} onChange={e => setAddress(e.target.value)} rows={2} />
           {err && <p className="pd-modal-err">{err}</p>}
-          <button
-            type="submit"
-            className="pd-modal-submit"
-            disabled={placing}
-          >
+          <button type="submit" className="pd-modal-submit" disabled={placing}>
             {placing ? "Placing…" : "Confirm Order →"}
           </button>
         </form>
@@ -141,30 +101,25 @@ const OrderModal = ({ product, onClose, onSuccess }) => {
 
 /* ── Main Component ── */
 const ProductDetails = () => {
-  const { productId } = useParams();
-  const navigate      = useNavigate();
-  const { addToCart } = useCart();
+  const { productId }  = useParams();
+  const navigate       = useNavigate();
+  const { addToCart }  = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();  // ✅ new
 
   const [product,        setProduct]        = useState(null);
   const [loading,        setLoading]        = useState(true);
   const [error,          setError]          = useState(null);
   const [cartAdded,      setCartAdded]      = useState(false);
-  const [wished,         setWished]         = useState(false);
+  const [wishToast,      setWishToast]      = useState("");   // ✅ new toast
   const [showModal,      setShowModal]      = useState(false);
   const [orderSuccess,   setOrderSuccess]   = useState(false);
   const [confirmedEmail, setConfirmedEmail] = useState("");
 
   useEffect(() => {
-    setProduct(null);
-    setLoading(true);
-    setError(null);
-    setCartAdded(false);
-    setWished(false);
-    setShowModal(false);
-    setOrderSuccess(false);
+    setProduct(null); setLoading(true); setError(null);
+    setCartAdded(false); setShowModal(false); setOrderSuccess(false);
 
-    axios
-      .get(`http://localhost:8080/api/products/${productId}`)
+    axios.get(`http://localhost:8080/api/products/${productId}`)
       .then(r  => setProduct(r.data))
       .catch(e => setError(e.response?.data?.message || "Product not found."))
       .finally(() => setLoading(false));
@@ -176,6 +131,14 @@ const ProductDetails = () => {
     setTimeout(() => setCartAdded(false), 2400);
   };
 
+  // ✅ Toggle wishlist and show toast
+  const handleWishlist = () => {
+    toggleWishlist(product);
+    const msg = isWishlisted(product.id) ? "Removed from Wishlist" : "Added to Wishlist ❤️";
+    setWishToast(msg);
+    setTimeout(() => setWishToast(""), 2000);
+  };
+
   const handleOrderSuccess = (email) => {
     setShowModal(false);
     setConfirmedEmail(email);
@@ -183,7 +146,6 @@ const ProductDetails = () => {
     setTimeout(() => setOrderSuccess(false), 4000);
   };
 
-  /* ── Loading ── */
   if (loading) return (
     <div className="pd-state-box">
       <div className="pd-spinner" />
@@ -191,7 +153,6 @@ const ProductDetails = () => {
     </div>
   );
 
-  /* ── Error ── */
   if (error) return (
     <div className="pd-state-box">
       <span className="pd-state-icon">🔍</span>
@@ -212,36 +173,32 @@ const ProductDetails = () => {
     product.offers   && { k: "Offers",   v: product.offers, green: true },
   ].filter(Boolean);
 
+  const wished = isWishlisted(product.id);  // ✅ live state from context
+
   return (
     <div className="pd-page">
 
-      {/* ── Quick Order Modal ── */}
       {showModal && (
-        <OrderModal
-          product={product}
-          onClose={() => setShowModal(false)}
-          onSuccess={handleOrderSuccess}
-        />
+        <OrderModal product={product} onClose={() => setShowModal(false)} onSuccess={handleOrderSuccess} />
       )}
 
-      {/* ── Success Toast ── */}
+      {/* ✅ Wishlist toast */}
+      {wishToast && (
+        <div className="pd-toast pd-toast-wish">{wishToast}</div>
+      )}
+
       {orderSuccess && (
         <div className="pd-toast pd-toast-success">
           🎉 Order placed! Confirmation sent to <strong>{confirmedEmail}</strong>
         </div>
       )}
 
-      {/* ── Breadcrumb ── */}
       <div className="pd-topbar">
-        <button className="pd-back-btn" onClick={() => navigate(-1)}>
-          <BackIcon /> Back
-        </button>
+        <button className="pd-back-btn" onClick={() => navigate(-1)}><BackIcon /> Back</button>
         <span className="pd-crumb-sep">/</span>
         <Link to="/categories" className="pd-crumb-link">Categories</Link>
         <span className="pd-crumb-sep">/</span>
-        <Link to={`/category/${product.category}`} className="pd-crumb-link">
-          {catLabel}
-        </Link>
+        <Link to={`/category/${product.category}`} className="pd-crumb-link">{catLabel}</Link>
         <span className="pd-crumb-sep">/</span>
         <span className="pd-crumb-current">{product.name}</span>
       </div>
@@ -249,7 +206,6 @@ const ProductDetails = () => {
       <div className="pd-wrap">
         <div className="pd-grid">
 
-          {/* ── Left: Info ── */}
           <div className="pd-left-col">
             <span className="pd-cat-pill">{catLabel}</span>
             <h1 className="pd-title">{product.name}</h1>
@@ -262,33 +218,25 @@ const ProductDetails = () => {
             </div>
 
             <div className="pd-price-row">
-              <span className="pd-price-tag">
-                ₹{product.price?.toLocaleString("en-IN")}
-              </span>
+              <span className="pd-price-tag">₹{product.price?.toLocaleString("en-IN")}</span>
               <span className="pd-price-note">incl. all taxes</span>
             </div>
 
             <hr className="pd-divider" />
 
-            {(attrs.length > 0 ||
-              product.variants?.length > 0 ||
-              product.sizes?.length > 0) && (
+            {(attrs.length > 0 || product.variants?.length > 0 || product.sizes?.length > 0) && (
               <div className="pd-attr-box">
                 {attrs.map((a) => (
                   <div key={a.k} className="pd-attr-row">
                     <span className="pd-attr-key">{a.k}</span>
-                    <span className={`pd-attr-val ${a.green ? "green" : ""}`}>
-                      {a.v}
-                    </span>
+                    <span className={`pd-attr-val ${a.green ? "green" : ""}`}>{a.v}</span>
                   </div>
                 ))}
                 {product.variants?.length > 0 && (
                   <div className="pd-attr-row">
                     <span className="pd-attr-key">Variants</span>
                     <div className="pd-chips">
-                      {product.variants.map(v => (
-                        <span key={v} className="pd-chip">{v}</span>
-                      ))}
+                      {product.variants.map(v => <span key={v} className="pd-chip">{v}</span>)}
                     </div>
                   </div>
                 )}
@@ -296,9 +244,7 @@ const ProductDetails = () => {
                   <div className="pd-attr-row">
                     <span className="pd-attr-key">Sizes</span>
                     <div className="pd-chips">
-                      {product.sizes.map(s => (
-                        <span key={s} className="pd-chip">{s}</span>
-                      ))}
+                      {product.sizes.map(s => <span key={s} className="pd-chip">{s}</span>)}
                     </div>
                   </div>
                 )}
@@ -309,30 +255,24 @@ const ProductDetails = () => {
 
             <div className="pd-btn-stack">
               <div className="pd-btn-row">
-                <button
-                  className={`pd-cart-btn ${cartAdded ? "added" : ""}`}
-                  onClick={handleCart}
-                  disabled={!inStock}
-                >
+                <button className={`pd-cart-btn ${cartAdded ? "added" : ""}`}
+                  onClick={handleCart} disabled={!inStock}>
                   <CartIcon />
                   {cartAdded ? "Added to Cart ✓" : "Add to Cart"}
                 </button>
+
+                {/* ✅ Heart button now connected to WishlistContext */}
                 <button
                   className={`pd-wish-btn ${wished ? "active" : ""}`}
-                  onClick={() => setWished(w => !w)}
-                  title="Add to Wishlist"
+                  onClick={handleWishlist}
+                  title={wished ? "Remove from Wishlist" : "Add to Wishlist"}
                 >
                   <HeartIcon on={wished} />
                 </button>
               </div>
 
-              <button
-                className="pd-order-btn"
-                onClick={() => setShowModal(true)}
-                disabled={!inStock}
-              >
-                <BoltIcon />
-                Order Now
+              <button className="pd-order-btn" onClick={() => setShowModal(true)} disabled={!inStock}>
+                <BoltIcon /> Order Now
               </button>
             </div>
 
@@ -341,21 +281,14 @@ const ProductDetails = () => {
             </Link>
           </div>
 
-          {/* ── Right: Image ── */}
           <div className="pd-right-col">
             <div className="pd-img-card">
               <img
-                src={
-                  product.image ||
-                  product.imageUrl ||
-                  "https://via.placeholder.com/600x480?text=No+Image"
-                }
+                src={product.image || product.imageUrl || "https://via.placeholder.com/600x480?text=No+Image"}
                 alt={product.name}
               />
               <div className="pd-img-grad" />
-              <div className="pd-price-badge">
-                ₹{product.price?.toLocaleString("en-IN")}
-              </div>
+              <div className="pd-price-badge">₹{product.price?.toLocaleString("en-IN")}</div>
               {!inStock && (
                 <div className="pd-oos-overlay">
                   <span className="pd-oos-pill">OUT OF STOCK</span>

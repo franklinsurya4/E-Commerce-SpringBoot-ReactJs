@@ -1,0 +1,237 @@
+/* ── Wishlist Hero Card — FIXED SIZE ── */
+.wishlist-hero-card {
+  flex-direction: column;
+  align-items: flex-start;
+  height: 250px;
+  overflow: hidden;      
+  padding: 16px !important;
+  box-sizing: border-box;
+   height: 250px;
+  min-height: 250px;
+  max-height: 250px; 
+}
+
+.wishlist-hero-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+  flex-shrink: 0;          /* ✅ header never shrinks */
+}
+
+.wishlist-hero-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.wishlist-count {
+  background: #f43f5e;
+  color: white;
+  border-radius: 50%;
+  padding: 1px 7px;
+  font-size: 12px;
+}
+
+.wishlist-empty {
+  font-size: 13px;
+  color: #999;
+  text-align: center;
+  width: 100%;
+  padding: 20px 0;
+  line-height: 1.8;
+}
+
+/* ✅ Only this scrolls — header stays pinned */
+.wishlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  overflow-y: auto;
+  flex: 1;                 /* ✅ fills remaining height after header */
+  min-height: 0;           /* ✅ critical — allows flex child to shrink & scroll */
+  padding-right: 4px;
+  box-sizing: border-box;
+
+  /* ✅ thin scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb transparent;
+}
+
+.wishlist-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.wishlist-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wishlist-list::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.wishlist-list::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+/* ── Wishlist Card ── */
+.wishlist-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  flex-shrink: 0;          /* ✅ cards don't compress when list is full */
+  box-sizing: border-box;
+}
+
+.wishlist-card:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  transform: translateX(2px);
+}
+
+.wishlist-card img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.wishlist-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wishlist-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.wishlist-card-price {
+  font-size: 13px;
+  color: #2563eb;
+  font-weight: 600;
+  margin: 2px 0 0;
+}
+
+.wishlist-card-cat {
+  font-size: 10px;
+  background: #e0f2fe;
+  color: #0284c7;
+  padding: 1px 6px;
+  border-radius: 10px;
+  text-transform: capitalize;
+}
+
+.wishlist-card-remove {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.wishlist-card-remove:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* ── Wishlist Tab Content ── */
+.wishlist-tab-content {
+  width: 100%;
+}
+
+.wishlist-tab-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+  gap: 8px;
+}
+
+.wishlist-tab-empty span {
+  font-size: 48px;
+}
+
+.wishlist-tab-empty p {
+  font-size: 18px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0;
+}
+
+.wishlist-tab-empty small {
+  font-size: 13px;
+}
+
+.wishlist-tab-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.wishlist-tab-grid .wishlist-card {
+  padding: 12px;
+}
+
+.wishlist-tab-grid .wishlist-card img {
+  width: 64px;
+  height: 64px;
+}
+
+/* ── Wishlist Toast ── */
+.pd-toast-wish {
+  background: #f43f5e;
+  color: white;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 9999;
+  animation: fadeInOut 2s ease forwards;
+}
+
+@keyframes fadeInOut {
+  0%   { opacity: 0; transform: translateY(-8px); }
+  15%  { opacity: 1; transform: translateY(0); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── Map Wrapper ── */
+.map-wrapper {
+  width: 100%;
+  height: 320px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  background: #f0f0f0;
+  margin-top: 6px;
+}
