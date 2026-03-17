@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import StoreSettings from "../components/settings/StoreSettings";
 import PaymentSettings from "../components/settings/PaymentSettings";
@@ -13,18 +13,40 @@ import SystemSettings from "../components/settings/SystemSettings";
 import EmailSettings from "../components/settings/EmailSettings";
 import AnalyticsSettings from "../components/settings/AnalyticsSettings";
 
+import { getOrdersByEmail, getMe } from "../api/api";
 import "../styles/settings.css";
 
 export default function SettingsPage() {
   const [tab, setTab] = useState("store");
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const user = await getMe(token);
+        const userOrders = await getOrdersByEmail(user.email);
+        setOrders(userOrders);
+        setError(null);
+      } catch (err) {
+        setError(err.message || "Failed to fetch orders");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token) fetchOrders();
+  }, [token]);
 
   return (
     <div className="settings-layout">
-
-      {/* ===== PAGE TITLE ===== */}
       <h2 className="settings-title">SETTINGS</h2>
 
-      {/* ===== TOP NAVBAR WITH TABS ===== */}
+      {/* Top navbar */}
       <div className="settings-navbar">
         <ul className="settings-tabs">
           <li className={tab === "store" ? "active" : ""} onClick={() => setTab("store")}>Store</li>
@@ -41,20 +63,27 @@ export default function SettingsPage() {
         </ul>
       </div>
 
-      {/* ===== CONTENT AREA ===== */}
+      {/* Content */}
       <div className="settings-content">
-        {tab === "store" && <StoreSettings />}
-        {tab === "payment" && <PaymentSettings />}
-        {tab === "shipping" && <ShippingSettings />}
-        {tab === "tax" && <TaxSettings />}
-        {tab === "notification" && <NotificationSettings />}
-        {tab === "security" && <SecuritySettings />}
-        {tab === "appearance" && <AppearanceSettings />}
-        {tab === "seo" && <SEOSettings />}
-        {tab === "features" && <FeatureSettings />}
-        {tab === "system" && <SystemSettings />}
-        {tab === "email" && <EmailSettings />}
-        {tab === "analytics" && <AnalyticsSettings />}
+        {loading && <p>Loading orders...</p>}
+        {error && <p style={{ color: "red" }}>{error}</p>}
+
+        {!loading && !error && (
+          <>
+            {tab === "store" && <StoreSettings />}
+            {tab === "payment" && <PaymentSettings />}
+            {tab === "shipping" && <ShippingSettings />}
+            {tab === "tax" && <TaxSettings />}
+            {tab === "notification" && <NotificationSettings />}
+            {tab === "security" && <SecuritySettings />}
+            {tab === "appearance" && <AppearanceSettings />}
+            {tab === "seo" && <SEOSettings />}
+            {tab === "features" && <FeatureSettings />}
+            {tab === "system" && <SystemSettings />}
+            {tab === "email" && <EmailSettings />}
+            {tab === "analytics" && <AnalyticsSettings orders={orders} />}
+          </>
+        )}
       </div>
     </div>
   );
