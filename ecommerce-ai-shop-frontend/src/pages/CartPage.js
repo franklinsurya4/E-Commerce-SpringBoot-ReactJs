@@ -1,95 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Minus, Plus, Trash2, X, Truck, CreditCard, Shield, Check, MapPin, Loader } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, Trash2, X, Truck, CreditCard, Shield, Check, MapPin, Loader, ChevronRight } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { orderAPI } from '../api/api';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import '../styles/cart-summary.css';
 
 export default function CartPage() {
   const { cart, updateQuantity, removeItem, clearCart, loading } = useCart();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Checkout Modal
+  const [selectedItemId, setSelectedItemId] = useState(null);
+  const selectedItem = cart.items?.find(i => i.id === selectedItemId) || null;
+
+  const fullSubtotal = cart.subtotal || 0;
+  const displaySubtotal = selectedItem ? (selectedItem.lineTotal || 0) : fullSubtotal;
+  const displayTax = parseFloat((displaySubtotal * 0.08).toFixed(2));
+  const displayShipping = displaySubtotal >= 50 ? 0 : 5.99;
+  const displayTotal = parseFloat((displaySubtotal + displayTax + displayShipping).toFixed(2));
+
+  const cartTax = parseFloat((fullSubtotal * 0.08).toFixed(2));
+  const cartShipping = fullSubtotal >= 50 ? 0 : 5.99;
+  const cartTotal = parseFloat((fullSubtotal + cartTax + cartShipping).toFixed(2));
+
   const [showModal, setShowModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [processing, setProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
-  const [orderForm, setOrderForm] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    street: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-  });
+  const [orderForm, setOrderForm] = useState({ fullName: '', email: '', phone: '', street: '', city: '', state: '', zipCode: '', country: '' });
 
   useEffect(() => {
-    if (showModal && user) {
-      setOrderForm(prev => ({
-        ...prev,
-        fullName: prev.fullName || user.fullName || '',
-        email: prev.email || user.email || '',
-        phone: prev.phone || user.phone || '',
-      }));
-    }
+    if (showModal && user) setOrderForm(prev => ({ ...prev, fullName: prev.fullName || user.fullName || '', email: prev.email || user.email || '', phone: prev.phone || user.phone || '' }));
   }, [showModal, user]);
 
-  const subtotal = cart.subtotal || 0;
-  const tax = parseFloat((subtotal * 0.08).toFixed(2));
-  const shipping = subtotal >= 50 ? 0 : 5.99;
-  const total = parseFloat((subtotal + tax + shipping).toFixed(2));
+  useEffect(() => {
+    if (selectedItemId && !cart.items?.find(i => i.id === selectedItemId)) setSelectedItemId(null);
+  }, [cart.items, selectedItemId]);
+
+  const handleSelectItem = (itemId) => setSelectedItemId(prev => (prev === itemId ? null : itemId));
 
   const handlePlaceOrder = async () => {
     const { fullName, email, street, city, state, zipCode, country } = orderForm;
-    if (!fullName || !email || !street || !city || !state || !zipCode || !country) {
-      toast.error('Please fill all required fields');
-      return;
-    }
-
+    if (!fullName || !email || !street || !city || !state || !zipCode || !country) { toast.error(t('buyNowModal.fillAllFields')); return; }
     setProcessing(true);
     try {
-      const orderData = {
-        shippingAddress: street,
-        shippingCity: city,
-        shippingState: state,
-        shippingZip: zipCode,
-        shippingCountry: country,
-        paymentMethod: paymentMethod.toUpperCase(),
-      };
-
-      const res = await orderAPI.place(orderData);
+      const res = await orderAPI.place({ shippingAddress: street, shippingCity: city, shippingState: state, shippingZip: zipCode, shippingCountry: country, paymentMethod: paymentMethod.toUpperCase() });
       const order = res.data.data || res.data;
-
-      if (paymentMethod === 'stripe' && order.stripeCheckoutUrl) {
-        window.location.href = order.stripeCheckoutUrl;
-        return;
-      }
-
-      setOrderSuccess({
-        orderNumber: order.orderNumber || order.id,
-        trackingNumber: order.trackingNumber,
-        total: total,
-        itemCount: cart.itemCount,
-      });
-      clearCart();
-      toast.success('Order placed successfully!');
-    } catch (err) {
-      console.error('Order failed:', err);
-      toast.error(err?.response?.data?.message || 'Failed to place order');
-    }
+      if (paymentMethod === 'stripe' && order.stripeCheckoutUrl) { window.location.href = order.stripeCheckoutUrl; return; }
+      setOrderSuccess({ orderNumber: order.orderNumber || order.id, trackingNumber: order.trackingNumber, total: cartTotal, itemCount: cart.itemCount });
+      clearCart(); setSelectedItemId(null); toast.success(t('buyNowModal.orderPlaced'));
+    } catch (err) { toast.error(err?.response?.data?.message || t('buyNowModal.orderFailed')); }
     setProcessing(false);
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setOrderSuccess(null);
-    setProcessing(false);
-    if (orderSuccess) navigate('/orders');
-  };
+  const closeModal = () => { setShowModal(false); setOrderSuccess(null); setProcessing(false); if (orderSuccess) navigate('/orders'); };
 
   if (loading) return <div className="page-loader"><div className="spinner" /></div>;
 
@@ -98,9 +66,9 @@ export default function CartPage() {
       <div className="page-container">
         <div className="cart-empty">
           <ShoppingBag size={56} color="var(--text-muted)" />
-          <h2>Your cart is empty</h2>
-          <p>Add some products to get started.</p>
-          <Link to="/products" className="btn btn-primary">Browse Products</Link>
+          <h2>{t('cart.empty')}</h2>
+          <p>{t('cart.emptyDesc')}</p>
+          <Link to="/products" className="btn btn-primary">{t('cart.browseProducts')}</Link>
         </div>
       </div>
     );
@@ -108,205 +76,156 @@ export default function CartPage() {
 
   return (
     <div className="page-container">
-      <h1 className="page-title">Shopping Cart ({cart.itemCount} items)</h1>
+      <h1 className="page-title">{t('cart.title')} ({cart.itemCount} {t('cart.items')})</h1>
+
       <div className="cart-layout">
         <div className="cart-items">
           {cart.items.map(item => (
-            <div key={item.id} className="cart-item">
+            <div key={item.id} className={`cart-item ${selectedItemId === item.id ? 'cart-item-selected' : ''}`} onClick={() => handleSelectItem(item.id)}>
               <img src={item.product?.imageUrl} alt={item.product?.name} className="cart-item-img" />
               <div className="cart-item-info">
-                <Link to={`/products/${item.product?.id}`} className="cart-item-name" style={{ color: 'var(--text-primary)' }}>
-                  {item.product?.name}
-                </Link>
+                <Link to={`/products/${item.product?.id}`} className="cart-item-name" style={{ color: 'var(--text-primary)' }} onClick={e => e.stopPropagation()}>{item.product?.name}</Link>
                 <p className="cart-item-meta">
                   {item.product?.brand}
-                  {item.selectedSize && ` • Size: ${item.selectedSize}`}
-                  {item.selectedColor && ` • Color: ${item.selectedColor}`}
+                  {item.selectedSize && ` • ${t('cart.size')}: ${item.selectedSize}`}
+                  {item.selectedColor && ` • ${t('cart.color')}: ${item.selectedColor}`}
                 </p>
                 <div className="cart-item-bottom">
                   <div className="cart-qty">
-                    <button onClick={() => updateQuantity(item.id, item.quantity - 1)}><Minus size={14} /></button>
+                    <button onClick={e => { e.stopPropagation(); updateQuantity(item.id, item.quantity - 1); }}><Minus size={14} /></button>
                     <span>{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)}><Plus size={14} /></button>
+                    <button onClick={e => { e.stopPropagation(); updateQuantity(item.id, item.quantity + 1); }}><Plus size={14} /></button>
                   </div>
                   <span className="cart-item-price">${item.lineTotal?.toFixed(2)}</span>
                 </div>
-                <button className="cart-remove" onClick={() => removeItem(item.id)}>
-                  <Trash2 size={14} style={{ marginRight: 4 }} /> Remove
+                <button className="cart-remove" onClick={e => { e.stopPropagation(); removeItem(item.id); }}>
+                  <Trash2 size={14} style={{ marginRight: 4 }} /> {t('cart.remove')}
                 </button>
               </div>
+              <ChevronRight size={16} className="cart-item-chevron" />
             </div>
           ))}
         </div>
 
         <div className="cart-summary">
-          <h3>Order Summary</h3>
-          <div className="summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-          <div className="summary-row"><span>Tax</span><span>${tax.toFixed(2)}</span></div>
-          <div className="summary-row"><span>Shipping</span><span>{shipping > 0 ? `$${shipping.toFixed(2)}` : 'Free'}</span></div>
-          <div className="summary-total"><span>Total</span><span>${total.toFixed(2)}</span></div>
-          <button className="btn btn-primary btn-full btn-lg" onClick={() => setShowModal(true)}>
-            Proceed to Checkout
-          </button>
-          {shipping > 0 && subtotal > 0 && (
+          <h3>{t('cart.orderSummary')}</h3>
+          {selectedItem && (
+            <div className="summary-viewing-label">
+              {t('cart.viewing')}: <strong>{selectedItem.product?.name}</strong>
+              <button className="summary-view-all" onClick={() => setSelectedItemId(null)}>{t('cart.viewAllItems')}</button>
+            </div>
+          )}
+          {selectedItem && (
+            <div className="summary-selected-product">
+              <img src={selectedItem.product?.imageUrl} alt={selectedItem.product?.name} className="summary-product-img" />
+              <div className="summary-product-details">
+                <span className="summary-product-name">{selectedItem.product?.name}</span>
+                {selectedItem.product?.brand && <span className="summary-product-brand">{selectedItem.product.brand}</span>}
+                <div className="summary-product-pricing">
+                  <span className="summary-product-qty">{t('buyNowModal.qty')}: {selectedItem.quantity}</span>
+                  <span className="summary-product-unit">× ${selectedItem.product?.price?.toFixed(2)}</span>
+                </div>
+                <span className="summary-product-line-total">${selectedItem.lineTotal?.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+          <div className="summary-items-list">
+            {cart.items.map(item => (
+              <div key={item.id} className={`summary-item-row ${selectedItemId === item.id ? 'summary-item-active' : ''}`} onClick={() => handleSelectItem(item.id)}>
+                <span className="summary-item-name">{item.product?.name}<span className="summary-item-qty"> ×{item.quantity}</span></span>
+                <span className="summary-item-price">${item.lineTotal?.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="summary-divider" />
+          <div className="summary-row"><span>{selectedItem ? t('cart.itemSubtotal') : t('cart.subtotal')}</span><span>${displaySubtotal.toFixed(2)}</span></div>
+          <div className="summary-row"><span>{t('buyNowModal.tax')}</span><span>${displayTax.toFixed(2)}</span></div>
+          <div className="summary-row"><span>{t('cart.shipping')}</span><span>{displayShipping > 0 ? `$${displayShipping.toFixed(2)}` : t('buyNowModal.free')}</span></div>
+          <div className="summary-total"><span>{selectedItem ? t('cart.itemTotal') : t('cart.total')}</span><span>${displayTotal.toFixed(2)}</span></div>
+          {selectedItem && (
+            <div className="summary-full-cart-note">{t('cart.fullCartTotal')}: <strong>${cartTotal.toFixed(2)}</strong> ({cart.itemCount} {t('cart.items')})</div>
+          )}
+          <button className="btn btn-primary btn-full btn-lg" onClick={() => setShowModal(true)}>{t('cart.proceedToCheckout')}</button>
+          {!selectedItem && displayShipping > 0 && fullSubtotal > 0 && (
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 12 }}>
-              Add ${(50 - subtotal).toFixed(2)} more for free shipping
+              {t('cart.addMoreForFree', { amount: (50 - fullSubtotal).toFixed(2) })}
             </p>
           )}
         </div>
       </div>
 
-      {/* ── CHECKOUT MODAL ── */}
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-container" onClick={e => e.stopPropagation()}>
             <button className="modal-close" onClick={closeModal}><X size={20} /></button>
-
             {orderSuccess ? (
               <div className="modal-success">
                 <div className="modal-success-icon"><Check size={36} /></div>
-                <h2>Order Placed!</h2>
-                <p>Order <strong>#{orderSuccess.orderNumber}</strong> confirmed</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  Tracking: {orderSuccess.trackingNumber}
-                </p>
-                <p className="modal-success-sub">
-                  {paymentMethod === 'cod' ? 'Pay on delivery' : 'Payment processed'}
-                </p>
+                <h2>{t('buyNowModal.orderPlacedTitle')}</h2>
+                <p>{t('buyNowModal.orderConfirmed', { number: orderSuccess.orderNumber })}</p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{t('buyNowModal.tracking')}: {orderSuccess.trackingNumber}</p>
+                <p className="modal-success-sub">{paymentMethod === 'cod' ? t('buyNowModal.payOnDelivery') : t('buyNowModal.paymentProcessed')}</p>
                 <div className="modal-success-summary">
                   <ShoppingBag size={28} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-                  <div>
-                    <span>{orderSuccess.itemCount} items ordered</span>
-                    <span className="modal-success-total">${orderSuccess.total?.toFixed(2)}</span>
-                  </div>
+                  <div><span>{t('cart.itemsOrdered', { count: orderSuccess.itemCount })}</span><span className="modal-success-total">${orderSuccess.total?.toFixed(2)}</span></div>
                 </div>
                 <div className="modal-success-actions">
-                  <button className="btn btn-primary btn-full" onClick={() => { closeModal(); navigate('/orders'); }}>
-                    View Orders
-                  </button>
-                  <button className="btn btn-ghost btn-full" onClick={() => { closeModal(); navigate('/products'); }}>
-                    Continue Shopping
-                  </button>
+                  <button className="btn btn-primary btn-full" onClick={() => { closeModal(); navigate('/orders'); }}>{t('buyNowModal.viewOrders')}</button>
+                  <button className="btn btn-ghost btn-full" onClick={() => { closeModal(); navigate('/products'); }}>{t('buyNowModal.continueShopping')}</button>
                 </div>
               </div>
             ) : (
               <>
-                <div className="modal-header">
-                  <h2>Checkout</h2>
-                  <p>{cart.itemCount} items — ${subtotal.toFixed(2)}</p>
-                </div>
-
-                {/* Cart Items Preview */}
+                <div className="modal-header"><h2>{t('checkout.title')}</h2><p>{cart.itemCount} {t('cart.items')} — ${fullSubtotal.toFixed(2)}</p></div>
                 <div className="modal-cart-items">
                   {cart.items.slice(0, 3).map(item => (
                     <div key={item.id} className="modal-cart-item">
                       <img src={item.product?.imageUrl} alt={item.product?.name} />
-                      <div>
-                        <span className="modal-product-name">{item.product?.name}</span>
-                        <span className="modal-product-brand">
-                          Qty: {item.quantity} × ${item.product?.price?.toFixed(2)}
-                        </span>
-                      </div>
+                      <div><span className="modal-product-name">{item.product?.name}</span><span className="modal-product-brand">{t('buyNowModal.qty')}: {item.quantity} × ${item.product?.price?.toFixed(2)}</span></div>
                       <strong>${item.lineTotal?.toFixed(2)}</strong>
                     </div>
                   ))}
-                  {cart.items.length > 3 && (
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '6px 0' }}>
-                      + {cart.items.length - 3} more items
-                    </p>
-                  )}
+                  {cart.items.length > 3 && <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', padding: '6px 0' }}>{t('cart.moreItems', { count: cart.items.length - 3 })}</p>}
                 </div>
-
-                {/* Contact Info */}
                 <div className="modal-section">
-                  <h4><span className="modal-step">1</span> Contact Details</h4>
+                  <h4><span className="modal-step">1</span> {t('buyNowModal.contactDetails')}</h4>
                   <div className="modal-form-grid">
-                    <div className="modal-field">
-                      <label>Full Name *</label>
-                      <input value={orderForm.fullName} onChange={e => setOrderForm({...orderForm, fullName: e.target.value})} placeholder="Franklin" />
-                    </div>
-                    <div className="modal-field">
-                      <label>Email *</label>
-                      <input value={orderForm.email} onChange={e => setOrderForm({...orderForm, email: e.target.value})} placeholder="you@email.com" />
-                    </div>
-                    <div className="modal-field">
-                      <label>Phone</label>
-                      <input value={orderForm.phone} onChange={e => setOrderForm({...orderForm, phone: e.target.value})} placeholder="+91 98765 43210" />
-                    </div>
+                    <div className="modal-field"><label>{t('buyNowModal.fullName')} *</label><input value={orderForm.fullName} onChange={e => setOrderForm({...orderForm, fullName: e.target.value})} /></div>
+                    <div className="modal-field"><label>{t('buyNowModal.email')} *</label><input value={orderForm.email} onChange={e => setOrderForm({...orderForm, email: e.target.value})} /></div>
+                    <div className="modal-field"><label>{t('buyNowModal.phone')}</label><input value={orderForm.phone} onChange={e => setOrderForm({...orderForm, phone: e.target.value})} /></div>
                   </div>
                 </div>
-
-                {/* Shipping Address */}
                 <div className="modal-section">
-                  <h4><MapPin size={14} /> <span className="modal-step">2</span> Shipping Address</h4>
+                  <h4><MapPin size={14} /> <span className="modal-step">2</span> {t('buyNowModal.shippingAddress')}</h4>
                   <div className="modal-form-grid">
-                    <div className="modal-field full">
-                      <label>Street Address *</label>
-                      <input value={orderForm.street} onChange={e => setOrderForm({...orderForm, street: e.target.value})} placeholder="123 Main Street, Apt 4B" />
-                    </div>
-                    <div className="modal-field">
-                      <label>City *</label>
-                      <input value={orderForm.city} onChange={e => setOrderForm({...orderForm, city: e.target.value})} placeholder="Vellore" />
-                    </div>
-                    <div className="modal-field">
-                      <label>State *</label>
-                      <input value={orderForm.state} onChange={e => setOrderForm({...orderForm, state: e.target.value})} placeholder="Tamil Nadu" />
-                    </div>
-                    <div className="modal-field">
-                      <label>ZIP Code *</label>
-                      <input value={orderForm.zipCode} onChange={e => setOrderForm({...orderForm, zipCode: e.target.value})} placeholder="632001" />
-                    </div>
-                    <div className="modal-field">
-                      <label>Country *</label>
-                      <input value={orderForm.country} onChange={e => setOrderForm({...orderForm, country: e.target.value})} placeholder="India" />
-                    </div>
+                    <div className="modal-field full"><label>{t('buyNowModal.streetAddress')} *</label><input value={orderForm.street} onChange={e => setOrderForm({...orderForm, street: e.target.value})} /></div>
+                    <div className="modal-field"><label>{t('buyNowModal.city')} *</label><input value={orderForm.city} onChange={e => setOrderForm({...orderForm, city: e.target.value})} /></div>
+                    <div className="modal-field"><label>{t('buyNowModal.state')} *</label><input value={orderForm.state} onChange={e => setOrderForm({...orderForm, state: e.target.value})} /></div>
+                    <div className="modal-field"><label>{t('buyNowModal.zipCode')} *</label><input value={orderForm.zipCode} onChange={e => setOrderForm({...orderForm, zipCode: e.target.value})} /></div>
+                    <div className="modal-field"><label>{t('buyNowModal.country')} *</label><input value={orderForm.country} onChange={e => setOrderForm({...orderForm, country: e.target.value})} /></div>
                   </div>
                 </div>
-
-                {/* Payment */}
                 <div className="modal-section">
-                  <h4><span className="modal-step">3</span> Payment</h4>
+                  <h4><span className="modal-step">3</span> {t('buyNowModal.payment')}</h4>
                   <div className="modal-payment-options">
                     <div className={`modal-payment ${paymentMethod === 'cod' ? 'active' : ''}`} onClick={() => setPaymentMethod('cod')}>
-                      <div className={`modal-radio ${paymentMethod === 'cod' ? 'checked' : ''}`} />
-                      <Truck size={18} />
-                      <div>
-                        <strong>Cash on Delivery</strong>
-                        <span>Pay when you receive</span>
-                      </div>
+                      <div className={`modal-radio ${paymentMethod === 'cod' ? 'checked' : ''}`} /><Truck size={18} /><div><strong>{t('buyNowModal.cod')}</strong><span>{t('buyNowModal.codDesc')}</span></div>
                     </div>
                     <div className={`modal-payment ${paymentMethod === 'stripe' ? 'active' : ''}`} onClick={() => setPaymentMethod('stripe')}>
-                      <div className={`modal-radio ${paymentMethod === 'stripe' ? 'checked' : ''}`} />
-                      <CreditCard size={18} />
-                      <div>
-                        <strong>Pay with Card</strong>
-                        <span>Visa, Mastercard, UPI</span>
-                      </div>
+                      <div className={`modal-radio ${paymentMethod === 'stripe' ? 'checked' : ''}`} /><CreditCard size={18} /><div><strong>{t('buyNowModal.payWithCard')}</strong><span>{t('buyNowModal.cardDesc')}</span></div>
                     </div>
                   </div>
                 </div>
-
-                {/* Totals */}
                 <div className="modal-totals">
-                  <div className="modal-total-row"><span>Subtotal ({cart.itemCount} items)</span><span>${subtotal.toFixed(2)}</span></div>
-                  <div className="modal-total-row"><span>Tax (8%)</span><span>${tax.toFixed(2)}</span></div>
-                  <div className="modal-total-row"><span>Shipping</span><span>{shipping > 0 ? `$${shipping.toFixed(2)}` : 'Free'}</span></div>
-                  <div className="modal-total-row total"><span>Total</span><span>${total.toFixed(2)}</span></div>
+                  <div className="modal-total-row"><span>{t('buyNowModal.subtotal')} ({cart.itemCount} {t('cart.items')})</span><span>${fullSubtotal.toFixed(2)}</span></div>
+                  <div className="modal-total-row"><span>{t('buyNowModal.tax')}</span><span>${cartTax.toFixed(2)}</span></div>
+                  <div className="modal-total-row"><span>{t('buyNowModal.shipping')}</span><span>{cartShipping > 0 ? `$${cartShipping.toFixed(2)}` : t('buyNowModal.free')}</span></div>
+                  <div className="modal-total-row total"><span>{t('buyNowModal.total')}</span><span>${cartTotal.toFixed(2)}</span></div>
                 </div>
-
                 <button className="btn btn-primary btn-full btn-lg modal-order-btn" onClick={handlePlaceOrder} disabled={processing}>
-                  {processing ? (
-                    <><Loader size={18} className="spin" /> Processing...</>
-                  ) : paymentMethod === 'stripe' ? (
-                    <><CreditCard size={18} /> Pay ${total.toFixed(2)}</>
-                  ) : (
-                    <><Truck size={18} /> Place Order (COD)</>
-                  )}
+                  {processing ? (<><Loader size={18} className="spin" /> {t('buyNowModal.processing')}</>) : paymentMethod === 'stripe' ? (<><CreditCard size={18} /> {t('buyNowModal.pay')} ${cartTotal.toFixed(2)}</>) : (<><Truck size={18} /> {t('buyNowModal.placeOrderCod')}</>)}
                 </button>
-
-                <div className="modal-trust">
-                  <Shield size={13} /> <span>Secure checkout — encrypted & protected</span>
-                </div>
+                <div className="modal-trust"><Shield size={13} /> <span>{t('buyNowModal.secureCheckout')}</span></div>
               </>
             )}
           </div>

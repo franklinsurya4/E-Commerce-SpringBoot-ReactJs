@@ -1,5 +1,7 @@
 package com.aishop.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -21,10 +23,12 @@ public class Order {
     @Builder.Default
     private String orderNumber = "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
+    @JsonIgnoreProperties({"password", "orders", "addresses", "hibernateLazyInitializer", "handler"})
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @JsonManagedReference("order-items")
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
@@ -65,6 +69,7 @@ public class Order {
 
     private LocalDateTime updatedAt;
 
+    @JsonManagedReference("order-tracking")
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("timestamp DESC")
     @Builder.Default

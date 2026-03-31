@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/chat/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/orders/track/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        // Admin
+                        // Admin endpoints — require ADMIN role
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Everything else requires authentication
                         .anyRequest().authenticated()

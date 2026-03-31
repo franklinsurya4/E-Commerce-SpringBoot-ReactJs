@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -29,135 +30,198 @@ public class EmailService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
+    private final NumberFormat fmt = NumberFormat.getCurrencyInstance(Locale.US);
+
+    // ===================== PUBLIC METHODS =====================
+
     @Async
     public void sendWelcomeEmail(String to, String name) {
-        String subject = "Welcome to AI Shop! 🎉";
-        String body = buildWelcomeHtml(name);
-        sendHtmlEmail(to, subject, body);
+        log.error("WELCOME EMAIL TO: {}", to);
+        sendHtmlEmail(to, "Welcome to AI Shop 🎉", buildWelcomeHtml(name));
     }
 
     @Async
     public void sendOrderConfirmation(String to, String name, Order order) {
-        String subject = "Order Confirmed - " + order.getOrderNumber();
-        String body = buildOrderConfirmationHtml(name, order);
-        sendHtmlEmail(to, subject, body);
+        log.error("ORDER CONFIRMATION EMAIL TO: {}", to);
+        sendHtmlEmail(
+                to,
+                "Order Confirmed - " + order.getOrderNumber(),
+                buildOrderHtml(name, order, "Order Confirmed ✓", "#22c55e")
+        );
     }
 
     @Async
     public void sendOrderStatusUpdate(String to, String name, Order order) {
-        String subject = "Order Update - " + order.getOrderNumber() + " is " + order.getStatus();
-        String body = buildStatusUpdateHtml(name, order);
-        sendHtmlEmail(to, subject, body);
+        log.error("ORDER STATUS EMAIL TO: {}", to);
+
+        String color = getStatusColor(order.getStatus().name());
+
+        sendHtmlEmail(
+                to,
+                "Order Update - " + order.getOrderNumber() + " is " + order.getStatus(),
+                buildOrderHtml(name, order, "Status: " + order.getStatus(), color)
+        );
     }
+
+    // ===================== CORE EMAIL SENDER =====================
 
     private void sendHtmlEmail(String to, String subject, String htmlBody) {
         try {
+
+            // 🔥 MOST IMPORTANT DEBUG
+            log.error("FINAL EMAIL SENT TO: {}", to);
+
+            if (!isValidEmail(to)) {
+                log.error("INVALID EMAIL BLOCKED: {}", to);
+                return;
+            }
+
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true, "UTF-8");
+
             helper.setFrom(fromEmail);
-            helper.setTo(to);
+            helper.setTo(to.trim()); // 🔥 remove hidden spaces
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
+
             mailSender.send(message);
-            log.info("Email sent to {}: {}", to, subject);
+
+            log.info("EMAIL SUCCESS → {} | {}", to, subject);
+
         } catch (MessagingException e) {
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
+            log.error("EMAIL FAILED → {} | {}", to, e.getMessage());
+        } catch (Exception e) {
+            log.error("UNEXPECTED EMAIL ERROR → {}", e.getMessage());
         }
     }
 
+    // ===================== VALIDATION =====================
+
+    private boolean isValidEmail(String email) {
+        String regex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+        return email != null && Pattern.matches(regex, email);
+    }
+
+    // ===================== HTML =====================
+
     private String buildWelcomeHtml(String name) {
         return """
-            <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto;background:#fafafa;border-radius:12px;overflow:hidden">
-              <div style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:40px;text-align:center">
-                <h1 style="color:#fff;margin:0;font-size:28px">Welcome to AI Shop</h1>
-                <p style="color:#94a3b8;margin:8px 0 0">Your smart shopping companion</p>
-              </div>
-              <div style="padding:32px">
-                <p style="font-size:16px;color:#334155">Hi %s,</p>
-                <p style="color:#475569;line-height:1.6">Welcome aboard! We're excited to have you. Browse our collection and let our AI assistant help you find exactly what you need.</p>
-                <div style="text-align:center;margin:24px 0">
-                  <a href="%s" style="background:#3b82f6;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600">Start Shopping</a>
-                </div>
-              </div>
-              <div style="background:#f1f5f9;padding:16px;text-align:center;color:#94a3b8;font-size:12px">
-                AI Shop &mdash; Smart Shopping, Powered by AI
-              </div>
+            <div style="font-family:Arial;max-width:600px;margin:auto;background:#fff;border-radius:10px;padding:30px">
+                <h2>Welcome to AI Shop 🚀</h2>
+                <p>Hi %s,</p>
+                <p>Start exploring our smart shopping experience.</p>
+                <a href="%s" style="background:#3b82f6;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none">Shop Now</a>
             </div>
             """.formatted(name, frontendUrl);
     }
 
-    private String buildOrderConfirmationHtml(String name, Order order) {
-        NumberFormat fmt = NumberFormat.getCurrencyInstance(Locale.US);
-        StringBuilder items = new StringBuilder();
-        for (OrderItem oi : order.getItems()) {
-            items.append("""
-                <tr>
-                  <td style="padding:8px;border-bottom:1px solid #e2e8f0">%s</td>
-                  <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center">%d</td>
-                  <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right">%s</td>
-                </tr>
-                """.formatted(oi.getProductName(), oi.getQuantity(), fmt.format(oi.getLineTotal())));
-        }
+    private String buildOrderHtml(String name, Order order, String title, String statusColor) {
 
         return """
-            <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto;background:#fafafa;border-radius:12px;overflow:hidden">
-              <div style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:40px;text-align:center">
-                <h1 style="color:#fff;margin:0">Order Confirmed ✓</h1>
-                <p style="color:#22c55e;margin:8px 0 0;font-size:18px">%s</p>
-              </div>
-              <div style="padding:32px">
-                <p style="color:#334155">Hi %s,</p>
-                <p style="color:#475569">Thank you for your order! Here's a summary:</p>
-                <table style="width:100%%;border-collapse:collapse;margin:16px 0">
-                  <thead><tr style="background:#f1f5f9"><th style="padding:8px;text-align:left">Item</th><th style="padding:8px;text-align:center">Qty</th><th style="padding:8px;text-align:right">Price</th></tr></thead>
-                  <tbody>%s</tbody>
-                </table>
-                <div style="border-top:2px solid #e2e8f0;padding-top:12px;text-align:right">
-                  <p style="margin:4px 0;color:#64748b">Subtotal: %s</p>
-                  <p style="margin:4px 0;color:#64748b">Tax: %s</p>
-                  <p style="margin:4px 0;color:#64748b">Shipping: %s</p>
-                  <p style="margin:4px 0;font-size:18px;font-weight:700;color:#0f172a">Total: %s</p>
+            <div style="font-family:Arial;background:#f5f5f5;padding:20px">
+                <div style="max-width:650px;margin:auto;background:white;border-radius:10px;padding:20px">
+
+                    <h2>%s</h2>
+                    <p style="color:%s;font-weight:bold">%s</p>
+
+                    <p>Hi %s,</p>
+                    <p>Order <b>%s</b></p>
+
+                    %s
+
+                    <hr/>
+
+                    <h3>Total: %s</h3>
+
+                    <p><b>Tracking:</b> %s</p>
+                    <p><b>Estimated Delivery:</b> %s</p>
+
+                    <div style="text-align:center;margin-top:20px">
+                        <a href="%s/orders/%d"
+                           style="background:#3b82f6;color:#fff;padding:12px 25px;border-radius:6px;text-decoration:none">
+                           View Order
+                        </a>
+                    </div>
+
                 </div>
-                <div style="text-align:center;margin:24px 0">
-                  <a href="%s/orders/%d" style="background:#3b82f6;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600">Track Order</a>
-                </div>
-                <div style="background:#f1f5f9;border-radius:8px;padding:16px;margin-top:16px">
-                  <p style="margin:0;font-weight:600;color:#334155">Tracking: %s</p>
-                  <p style="margin:4px 0 0;color:#64748b">Estimated delivery: %s</p>
-                </div>
-              </div>
             </div>
             """.formatted(
-                order.getOrderNumber(), name, items,
-                fmt.format(order.getSubtotal()), fmt.format(order.getTax()),
-                fmt.format(order.getShippingCost()), fmt.format(order.getTotal()),
-                frontendUrl, order.getId(), order.getTrackingNumber(),
-                order.getEstimatedDelivery().format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
+                title,
+                statusColor,
+                order.getStatus(),
+                name,
+                order.getOrderNumber(),
+                buildItemsTable(order),
+                fmt.format(order.getTotal()),
+                safe(order.getTrackingNumber()),
+                formatDate(order),
+                frontendUrl,
+                order.getId()
         );
     }
 
-    private String buildStatusUpdateHtml(String name, Order order) {
-        String statusColor = switch (order.getStatus()) {
-            case SHIPPED -> "#3b82f6";
-            case OUT_FOR_DELIVERY -> "#f59e0b";
-            case DELIVERED -> "#22c55e";
-            case CANCELLED -> "#ef4444";
+    private String buildItemsTable(Order order) {
+
+        StringBuilder items = new StringBuilder();
+
+        for (OrderItem item : order.getItems()) {
+            items.append("""
+                <tr>
+                    <td style="padding:10px">
+                        <img src="%s" width="70" height="70"
+                             style="border-radius:8px;object-fit:cover"/>
+                    </td>
+                    <td>
+                        <b>%s</b><br/>
+                        Qty: %d<br/>
+                        Price: %s
+                    </td>
+                    <td style="text-align:right;font-weight:bold">
+                        %s
+                    </td>
+                </tr>
+            """.formatted(
+                    safeImage(item.getProductImage()),
+                    item.getProductName(),
+                    item.getQuantity(),
+                    fmt.format(item.getPrice()),
+                    fmt.format(item.getLineTotal())
+            ));
+        }
+
+        return """
+            <table width="100%%" style="border-collapse:collapse;margin-top:15px">
+                <tbody>%s</tbody>
+            </table>
+            """.formatted(items);
+    }
+
+    // ===================== HELPERS =====================
+
+    private String safe(String val) {
+        return val == null ? "N/A" : val;
+    }
+
+    private String safeImage(String url) {
+        return (url == null || url.isBlank())
+                ? "https://via.placeholder.com/70"
+                : url;
+    }
+
+    private String formatDate(Order order) {
+        if (order.getEstimatedDelivery() == null) return "N/A";
+        return order.getEstimatedDelivery()
+                .format(DateTimeFormatter.ofPattern("MMM dd, yyyy"));
+    }
+
+    private String getStatusColor(String status) {
+        return switch (status) {
+            case "SHIPPED" -> "#3b82f6";
+            case "OUT_FOR_DELIVERY" -> "#f59e0b";
+            case "DELIVERED" -> "#22c55e";
+            case "CANCELLED" -> "#ef4444";
             default -> "#64748b";
         };
-        return """
-            <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto;background:#fafafa;border-radius:12px;overflow:hidden">
-              <div style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:40px;text-align:center">
-                <h1 style="color:#fff;margin:0">Order Update</h1>
-                <p style="color:%s;margin:8px 0 0;font-size:18px;font-weight:600">%s</p>
-              </div>
-              <div style="padding:32px">
-                <p style="color:#334155">Hi %s,</p>
-                <p style="color:#475569">Your order <strong>%s</strong> status has been updated to <strong style="color:%s">%s</strong>.</p>
-                <div style="text-align:center;margin:24px 0">
-                  <a href="%s/orders/%d" style="background:#3b82f6;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600">View Order</a>
-                </div>
-              </div>
-            </div>
-            """.formatted(statusColor, order.getStatus(), name, order.getOrderNumber(), statusColor, order.getStatus(), frontendUrl, order.getId());
     }
 }

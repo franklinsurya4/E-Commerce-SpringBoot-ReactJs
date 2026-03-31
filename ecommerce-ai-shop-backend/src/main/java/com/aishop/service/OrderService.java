@@ -5,6 +5,7 @@ import com.aishop.exception.AppException;
 import com.aishop.model.*;
 import com.aishop.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -15,14 +16,17 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final AddressRepository addressRepository;
     private final TrackingEventRepository trackingEventRepository;
     private final EmailService emailService;
+    private final StripeService stripeService;
 
     private static final BigDecimal TAX_RATE = new BigDecimal("0.08");
     private static final BigDecimal FREE_SHIPPING = new BigDecimal("50.00");
@@ -34,16 +38,40 @@ public class OrderService {
         List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
         if (cartItems.isEmpty()) throw new AppException("Cart is empty");
 
+        // ══════════════════════════════════════════════
+        //  FIX: Resolve address from addressId if provided
+        // ══════════════════════════════════════════════
+        String shipAddress = request.getShippingAddress();
+        String shipCity = request.getShippingCity();
+        String shipState = request.getShippingState();
+        String shipZip = request.getShippingZip();
+        String shipCountry = request.getShippingCountry();
+
+        if (request.getAddressId() != null) {
+            Address addr = addressRepository.findById(request.getAddressId()).orElse(null);
+            if (addr != null) {
+                shipAddress = addr.getStreet();
+                shipCity = addr.getCity();
+                shipState = addr.getState();
+                shipZip = addr.getZipCode();
+                shipCountry = addr.getCountry();
+            }
+        }
+
+        // ── Determine payment method ──
+        Order.PaymentMethod pm = parsePaymentMethod(request.getPaymentMethod());
+        boolean isStripe = (pm == Order.PaymentMethod.STRIPE);
+
         Order order = Order.builder()
                 .user(user)
-                .shippingAddress(request.getShippingAddress())
-                .shippingCity(request.getShippingCity())
-                .shippingState(request.getShippingState())
-                .shippingZip(request.getShippingZip())
-                .shippingCountry(request.getShippingCountry())
-                .paymentMethod(parsePaymentMethod(request.getPaymentMethod()))
+                .shippingAddress(shipAddress)
+                .shippingCity(shipCity)
+                .shippingState(shipState)
+                .shippingZip(shipZip)
+                .shippingCountry(shipCountry)
+                .paymentMethod(pm)
                 .paymentId(request.getPaymentId())
-                .status(Order.OrderStatus.CONFIRMED)
+                .status(isStripe ? Order.OrderStatus.PENDING : Order.OrderStatus.CONFIRMED)
                 .estimatedDelivery(LocalDateTime.now().plusDays(5))
                 .build();
 
@@ -70,9 +98,15 @@ public class OrderService {
         order.setShippingCost(shipping);
         order.setTotal(subtotal.add(tax).add(shipping));
 
+        // ── Tracking event ──
+        String eventStatus = isStripe ? "PENDING" : "CONFIRMED";
+        String eventDesc = isStripe
+                ? "Order created. Awaiting payment via Stripe."
+                : "Your order has been placed and confirmed.";
+
         TrackingEvent event = TrackingEvent.builder()
-                .status("CONFIRMED")
-                .description("Your order has been placed and confirmed.")
+                .status(eventStatus)
+                .description(eventDesc)
                 .location("Processing Center")
                 .build();
         order.addTrackingEvent(event);
@@ -80,11 +114,39 @@ public class OrderService {
         Order saved = orderRepository.save(order);
         cartItemRepository.deleteByUserId(userId);
 
-        try {
-            emailService.sendOrderConfirmation(user.getEmail(), user.getFullName(), saved);
-        } catch (Exception e) { /* log but don't fail */ }
+        // ── Stripe Checkout Session ──
+        String stripeCheckoutUrl = null;
+        if (isStripe) {
+            try {
+                stripeCheckoutUrl = stripeService.createCheckoutSession(saved);
+                saved.setPaymentId("pending_stripe_" + saved.getOrderNumber());
+                orderRepository.save(saved);
+                log.info("Stripe checkout session created for order: {}", saved.getOrderNumber());
+            } catch (Exception e) {
+                log.error("Failed to create Stripe session for order: {}", saved.getOrderNumber(), e);
+                for (OrderItem oi : saved.getItems()) {
+                    Product p = oi.getProduct();
+                    p.setStock(p.getStock() + oi.getQuantity());
+                    productRepository.save(p);
+                }
+                saved.setStatus(Order.OrderStatus.CANCELLED);
+                orderRepository.save(saved);
+                throw new AppException("Failed to create payment session. Please try again.");
+            }
+        }
 
-        return toDto(saved);
+        // Send email for non-Stripe orders
+        if (!isStripe) {
+            try {
+                emailService.sendOrderConfirmation(user.getEmail(), user.getFullName(), saved);
+            } catch (Exception e) {
+                log.warn("Failed to send order confirmation email", e);
+            }
+        }
+
+        OrderDto dto = toDto(saved);
+        dto.setStripeCheckoutUrl(stripeCheckoutUrl);
+        return dto;
     }
 
     public List<OrderDto> getUserOrders(Long userId) {
@@ -98,7 +160,6 @@ public class OrderService {
         return toDto(order);
     }
 
-    // Track by tracking number OR order number
     public OrderDto trackOrder(String number) {
         Order order = orderRepository.findByTrackingNumber(number)
                 .or(() -> orderRepository.findByOrderNumber(number))
@@ -141,7 +202,9 @@ public class OrderService {
 
         try {
             emailService.sendOrderStatusUpdate(order.getUser().getEmail(), order.getUser().getFullName(), saved);
-        } catch (Exception e) { /* log */ }
+        } catch (Exception e) {
+            log.warn("Failed to send status update email", e);
+        }
 
         return toDto(saved);
     }

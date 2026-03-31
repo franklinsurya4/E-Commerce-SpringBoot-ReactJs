@@ -18,6 +18,11 @@ import AccountPage from './pages/AccountPage';
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import Notificationspage from './pages/Notificationspage';
+import Offerspage from './pages/Offerspage';
+import { WishlistProvider } from './context/Wishlistcontext';
+import WhishList from './pages/WhishList';
+
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -36,21 +41,26 @@ function AppContent() {
       )}
       <div className="main-content" style={!isAuthenticated ? { marginLeft: 0 } : undefined}>
         <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/products/:id" element={<ProductDetailPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-          <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-          <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-          <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
-          <Route path="/tracking" element={<TrackingPage />} />
-          <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+        <main className="page-content">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+            <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+            <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
+            <Route path="/tracking" element={<TrackingPage />} />
+            <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/wishlist" element={<WhishList />} />
+            <Route path="/notifications" element={<ProtectedRoute><Notificationspage /></ProtectedRoute>} />
+            <Route path="/offers" element={<Offerspage />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </main>
         <ChatWidget />
       </div>
     </div>
@@ -61,7 +71,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <CartProvider>
-        <AppContent />
+        <WishlistProvider>
+          <AppContent />
+        </WishlistProvider>
       </CartProvider>
     </ThemeProvider>
   );

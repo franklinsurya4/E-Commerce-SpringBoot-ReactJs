@@ -1,5 +1,5 @@
 /* ============================================
-   Sidebar — Uses --bg-sidebar from theme.css
+   Sidebar — Professional Layout
    ============================================ */
 .sidebar {
   position: fixed;
@@ -13,123 +13,135 @@
   flex-direction: column;
   z-index: 150;
   transition: transform var(--transition-slow), background 0.3s ease;
-  overflow-y: auto;
+  overflow: hidden;
 }
-
-/* Sidebar scrollbar */
-.sidebar::-webkit-scrollbar { width: 4px; }
-.sidebar::-webkit-scrollbar-track { background: transparent; }
-.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-body.light .sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
 
 /* ============================================
    Header / Brand
    ============================================ */
 .sidebar-header {
-  padding: 22px 20px 18px;
+  padding: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 2px solid rgba(255,255,255,0.08);
-  border-left: 3px solid var(--accent);
-}
-
-body.light .sidebar-header {
-  border-bottom: 2px solid rgba(0,0,0,0.1);
-  border-left: 3px solid var(--accent);
+  flex-shrink: 0;
 }
 
 .brand-name {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 1.3rem;
+  text-decoration: none;
+}
+
+.brand-logo {
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(99, 102, 241, 0.3));
+  transition: transform 0.3s ease;
+}
+.brand-name:hover .brand-logo {
+  transform: scale(1.06);
+}
+
+.brand-text {
+  font-size: 1.18rem;
   font-weight: 800;
   color: #fff;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+body.light .brand-text {
+  color: #1a1a2e;
 }
 
-body.light .brand-name {
-  color: #1a1a1a;
-}
-
-.brand-icon {
-  font-size: 1.5rem !important;
+.brand-accent {
   color: var(--accent);
 }
 
 .sidebar-close {
   display: none;
   background: none;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.45);
   padding: 6px;
   border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
 }
-
 body.light .sidebar-close {
-  color: rgba(20,20,20,0.5);
+  color: rgba(20, 20, 20, 0.45);
 }
-
 .sidebar-close:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
-
 body.light .sidebar-close:hover {
-  background: rgba(0,0,0,0.08);
+  background: rgba(0, 0, 0, 0.06);
   color: #1a1a1a;
 }
 
 /* ============================================
-   Navigation Links
+   Navigation
    ============================================ */
 .sidebar-nav {
   flex: 1;
-  padding: 16px 12px;
+  padding: 12px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }
+.sidebar-nav::-webkit-scrollbar { width: 3px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 3px; }
+body.light .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.08); }
 
+/* ── Navigation Links ── */
 .sidebar-link {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border-radius: var(--radius-sm);
-  color: rgba(255,255,255,0.6);
-  font-size: 1.02rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.88rem;
   font-weight: 500;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   position: relative;
 }
-
-/* Force lucide SVG icons bigger (overrides size={20} in JSX) */
-.sidebar-link > svg {
-  width: 22px !important;
-  height: 22px !important;
-  flex-shrink: 0;
+body.light .sidebar-link {
+  color: rgba(20, 20, 20, 0.6);
 }
 
-body.light .sidebar-link {
-  color: rgba(20,20,20,0.65);
+.sidebar-link > svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.18s ease;
 }
 
 .sidebar-link:hover {
-  background: rgba(255,255,255,0.06);
   color: #fff;
+  background: rgba(255, 255, 255, 0.06);
 }
-
 body.light .sidebar-link:hover {
-  background: rgba(0,0,0,0.06);
-  color: #1a1a1a;
+  color: #1a1a2e;
+  background: rgba(0, 0, 0, 0.04);
+}
+.sidebar-link:hover > svg {
+  opacity: 1;
 }
 
+/* Active state */
 .sidebar-link.active {
-  background: var(--accent-soft);
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 600;
+  background: var(--accent-soft);
+}
+.sidebar-link.active > svg {
+  opacity: 1;
 }
 
 .sidebar-link.active::before {
@@ -143,47 +155,37 @@ body.light .sidebar-link:hover {
   border-radius: 0 3px 3px 0;
 }
 
-.sidebar-badge {
-  margin-left: auto;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: var(--radius-full);
-}
-
 /* ============================================
    Footer / AI Badge
    ============================================ */
 .sidebar-footer {
-  padding: 16px 16px;
-  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
 }
-
 body.light .sidebar-footer {
-  border-top: 1px solid rgba(0,0,0,0.1);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .ai-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 0.82rem;
+  gap: 6px;
+  font-size: 0.72rem;
   font-weight: 500;
-  color: rgba(255,255,255,0.35);
-  padding: 10px 0;
+  color: rgba(255, 255, 255, 0.25);
+  padding: 6px 0;
+  letter-spacing: 0.01em;
 }
-
 .ai-badge > svg {
-  width: 16px !important;
-  height: 16px !important;
+  width: 14px !important;
+  height: 14px !important;
   color: var(--accent);
+  opacity: 0.6;
 }
-
 body.light .ai-badge {
-  color: rgba(20,20,20,0.45);
+  color: rgba(20, 20, 20, 0.3);
 }
 
 /* ============================================
@@ -192,12 +194,18 @@ body.light .ai-badge {
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
   z-index: 140;
+  animation: overlayIn 0.25s ease;
+}
+body.light .sidebar-overlay {
+  background: rgba(0, 0, 0, 0.2);
 }
 
-body.light .sidebar-overlay {
-  background: rgba(0,0,0,0.25);
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ============================================

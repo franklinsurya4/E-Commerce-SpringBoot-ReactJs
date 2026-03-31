@@ -1,5 +1,6 @@
 package com.aishop.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -127,7 +128,7 @@ public class Dtos {
     }
 
     // ========== ORDER ==========
-    @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class OrderDto {
         private Long id;
         private String orderNumber;
@@ -150,6 +151,9 @@ public class Dtos {
         private LocalDateTime deliveredAt;
         private LocalDateTime createdAt;
         private List<TrackingEventDto> trackingEvents;
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private String stripeCheckoutUrl;
     }
 
     @Data @NoArgsConstructor @AllArgsConstructor @Builder
@@ -165,8 +169,14 @@ public class Dtos {
         private BigDecimal lineTotal;
     }
 
+    // ═══════════════════════════════════════════════
+    //  FIX: Added addressId — checkout sends this
+    //  Service resolves it to address fields
+    //  Items come from CART database, not from request
+    // ═══════════════════════════════════════════════
     @Data @NoArgsConstructor @AllArgsConstructor
     public static class PlaceOrderRequest {
+        private Long addressId;
         private String shippingAddress;
         private String shippingCity;
         private String shippingState;

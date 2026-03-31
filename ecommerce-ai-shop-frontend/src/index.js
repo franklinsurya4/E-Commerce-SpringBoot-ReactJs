@@ -5,11 +5,14 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import App from './App';
+
+// i18n must be imported before App so translations are ready
+import './i18n/i18n';
+
 import './styles/global.css';
 import './styles/CheckOut.css';
-
-import './styles/theme.css';       // base variables + light mode overrides
-import './styles/components.css'; 
+import './styles/theme.css';
+import './styles/components.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

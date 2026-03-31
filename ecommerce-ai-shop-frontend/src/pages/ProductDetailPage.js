@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, ShoppingBag, Minus, Plus, Zap, X, Truck, CreditCard, Shield, Check, MapPin, Loader } from 'lucide-react';
+import { Star, ShoppingBag, Minus, Plus, Zap, X, Truck, CreditCard, Shield, Check, MapPin, Loader, ArrowLeft, Heart } from 'lucide-react';
 import { productAPI, reviewAPI, orderAPI } from '../api/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/Wishlistcontext';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
 export default function ProductDetailPage() {
@@ -11,6 +13,8 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { user, isAuthenticated } = useAuth();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const { t } = useTranslation();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [qty, setQty] = useState(1);
@@ -19,7 +23,6 @@ export default function ProductDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
 
-  // Buy Now Modal
   const [showModal, setShowModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [processing, setProcessing] = useState(false);
@@ -35,12 +38,14 @@ export default function ProductDetailPage() {
     country: '',
   });
 
+  // Translate a backend category name using the categories map, fallback to original
+  const tc = (cat) => t(`categories.${cat}`, { defaultValue: cat });
+
   useEffect(() => {
     productAPI.getById(id).then(r => setProduct(r.data.data)).catch(() => {});
     reviewAPI.getForProduct(id).then(r => setReviews(r.data.data || [])).catch(() => {});
   }, [id]);
 
-  // Pre-fill form with user data when modal opens
   useEffect(() => {
     if (showModal && user) {
       setOrderForm(prev => ({
@@ -54,24 +59,24 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      toast.error('Please sign in to add items');
+      toast.error(t('products.signInToAdd'));
       navigate('/login');
       return;
     }
     setAddingToCart(true);
     try {
       await addToCart(product.id, qty);
-      toast.success(`${product.name} added to cart!`);
+      toast.success(t('products.addedToCartToast', { name: product.name }));
     } catch (err) {
       console.error('Add to cart error:', err);
-      toast.error(err?.response?.data?.message || 'Failed to add to cart');
+      toast.error(err?.response?.data?.message || t('products.failedAddToCart'));
     }
     setAddingToCart(false);
   };
 
   const handleBuyNow = () => {
     if (!isAuthenticated) {
-      toast.error('Please sign in to place an order');
+      toast.error(t('products.signInToOrder'));
       navigate('/login');
       return;
     }
@@ -79,16 +84,25 @@ export default function ProductDetailPage() {
     setOrderSuccess(null);
   };
 
+  const handleWishlist = () => {
+    if (!product) return;
+    toggleWishlist(product);
+    if (isInWishlist(product.id)) {
+      toast.success(t('products.removedFromWishlist'));
+    } else {
+      toast.success(t('products.addedToWishlistToast'));
+    }
+  };
+
   const handlePlaceOrder = async () => {
     const { fullName, email, street, city, state, zipCode, country } = orderForm;
     if (!fullName || !email || !street || !city || !state || !zipCode || !country) {
-      toast.error('Please fill all required fields');
+      toast.error(t('buyNowModal.fillAllFields'));
       return;
     }
 
     setProcessing(true);
     try {
-      // Buy Now: add to cart first, then place order (backend reads from cart)
       await addToCart(product.id, qty);
 
       const orderData = {
@@ -113,10 +127,10 @@ export default function ProductDetailPage() {
         trackingNumber: order.trackingNumber,
         total: (product.price * qty),
       });
-      toast.success('Order placed successfully!');
+      toast.success(t('buyNowModal.orderPlaced'));
     } catch (err) {
       console.error('Order failed:', err);
-      toast.error(err?.response?.data?.message || 'Failed to place order');
+      toast.error(err?.response?.data?.message || t('buyNowModal.orderFailed'));
     }
     setProcessing(false);
   };
@@ -134,15 +148,16 @@ export default function ProductDetailPage() {
       const res = await reviewAPI.add(id, { rating, comment });
       setReviews(prev => [res.data.data, ...prev]);
       setComment('');
-      toast.success('Review added!');
+      toast.success(t('reviews.added'));
     } catch (e) {
-      toast.error(e.response?.data?.message || 'Failed to add review');
+      toast.error(e.response?.data?.message || t('reviews.failed'));
     }
     setSubmitting(false);
   };
 
   if (!product) return <div className="page-loader"><div className="spinner" /></div>;
 
+  const wishlisted = isInWishlist(product.id);
   const lineTotal = (product.price * qty).toFixed(2);
   const tax = (product.price * qty * 0.08).toFixed(2);
   const shipping = product.price * qty >= 50 ? 0 : 5.99;
@@ -150,6 +165,12 @@ export default function ProductDetailPage() {
 
   return (
     <div className="page-container">
+      {/* Back Button */}
+      <button className="btn btn-secondary btn-back" onClick={() => navigate(-1)} style={{ marginBottom: 20 }}>
+        <ArrowLeft size={18} />
+        <span>{t('common.back')}</span>
+      </button>
+
       <div className="product-detail">
         <div className="pd-image"><img src={product.imageUrl} alt={product.name} /></div>
         <div className="pd-info">
@@ -160,7 +181,7 @@ export default function ProductDetailPage() {
               <Star key={i} size={18} fill={i < Math.round(product.rating) ? 'var(--warning)' : 'none'} color="var(--warning)" />
             ))}
             <span style={{ marginLeft: 8, color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
-              {product.rating} ({product.reviewCount} reviews)
+              {product.rating} ({product.reviewCount} {t('products.reviews').toLowerCase()})
             </span>
           </div>
           <div className="pd-price-row">
@@ -168,13 +189,13 @@ export default function ProductDetailPage() {
             {product.originalPrice && (
               <>
                 <span className="pd-orig-price">${product.originalPrice?.toFixed(2)}</span>
-                <span className="pd-discount">Save {Math.round((1 - product.price / product.originalPrice) * 100)}%</span>
+                <span className="pd-discount">{t('products.save')} {Math.round((1 - product.price / product.originalPrice) * 100)}%</span>
               </>
             )}
           </div>
           <p className="pd-desc">{product.description}</p>
           <p className={`pd-stock ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}`}>
-            {product.stock > 0 ? `✓ In stock (${product.stock} available)` : '✗ Out of stock'}
+            {product.stock > 0 ? `✓ ${t('common.inStock')} (${product.stock} ${t('products.available')})` : `✗ ${t('common.outOfStock')}`}
           </p>
 
           <div className="pd-actions">
@@ -185,16 +206,25 @@ export default function ProductDetailPage() {
             </div>
             <button className="btn btn-primary btn-lg" onClick={handleAddToCart} disabled={product.stock === 0 || addingToCart}>
               <ShoppingBag size={18} />
-              {addingToCart ? 'Adding...' : 'Add to Cart'}
+              {addingToCart ? t('products.addingToCart') : t('products.addToCart')}
             </button>
             <button className="btn btn-buy-now btn-lg" onClick={handleBuyNow} disabled={product.stock === 0}>
-              <Zap size={18} /> Buy Now
+              <Zap size={18} /> {t('products.buyNow')}
             </button>
           </div>
 
+          {/* Wishlist Button */}
+          <button
+            className={`btn btn-wishlist-detail ${wishlisted ? 'wishlisted' : ''}`}
+            onClick={handleWishlist}
+          >
+            <Heart size={18} fill={wishlisted ? '#ef4444' : 'none'} color={wishlisted ? '#ef4444' : 'currentColor'} />
+            {wishlisted ? t('products.addedToWishlist') : t('products.addToWishlistBtn')}
+          </button>
+
           {product.tags?.length > 0 && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
-              {product.tags.map(t => <span key={t} className="badge badge-accent">{t}</span>)}
+              {product.tags.map(tag => <span key={tag} className="badge badge-accent">{tag}</span>)}
             </div>
           )}
         </div>
@@ -202,10 +232,10 @@ export default function ProductDetailPage() {
 
       {/* Reviews */}
       <div className="reviews-section">
-        <h2 className="page-title">Reviews</h2>
+        <h2 className="page-title">{t('reviews.title')}</h2>
         {isAuthenticated && (
           <div className="review-form card">
-            <h3 style={{ marginBottom: 12 }}>Write a Review</h3>
+            <h3 style={{ marginBottom: 12 }}>{t('reviews.writeReview')}</h3>
             <div className="star-input">
               {[1,2,3,4,5].map(s => (
                 <button key={s} className={s <= rating ? 'filled' : ''} onClick={() => setRating(s)}>
@@ -213,14 +243,14 @@ export default function ProductDetailPage() {
                 </button>
               ))}
             </div>
-            <textarea placeholder="Share your thoughts..." value={comment} onChange={e => setComment(e.target.value)} />
+            <textarea placeholder={t('reviews.placeholder')} value={comment} onChange={e => setComment(e.target.value)} />
             <button className="btn btn-primary" onClick={submitReview} disabled={submitting}>
-              {submitting ? 'Submitting...' : 'Submit Review'}
+              {submitting ? t('reviews.submitting') : t('reviews.submit')}
             </button>
           </div>
         )}
         {reviews.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', padding: '24px 0' }}>No reviews yet. Be the first!</p>
+          <p style={{ color: 'var(--text-muted)', padding: '24px 0' }}>{t('reviews.noReviews')}</p>
         ) : (
           reviews.map(r => (
             <div key={r.id} className="review-card">
@@ -243,20 +273,18 @@ export default function ProductDetailPage() {
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-container" onClick={e => e.stopPropagation()}>
-            {/* Close Button */}
             <button className="modal-close" onClick={closeModal}><X size={20} /></button>
 
             {orderSuccess ? (
-              /* ── SUCCESS SCREEN ── */
               <div className="modal-success">
                 <div className="modal-success-icon"><Check size={36} /></div>
-                <h2>Order Placed!</h2>
-                <p>Order <strong>#{orderSuccess.orderNumber}</strong> confirmed</p>
+                <h2>{t('buyNowModal.orderPlacedTitle')}</h2>
+                <p>{t('buyNowModal.orderConfirmed', { number: orderSuccess.orderNumber })}</p>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  Tracking: {orderSuccess.trackingNumber}
+                  {t('buyNowModal.tracking')}: {orderSuccess.trackingNumber}
                 </p>
                 <p className="modal-success-sub">
-                  {paymentMethod === 'cod' ? 'Pay on delivery' : 'Payment processed'}
+                  {paymentMethod === 'cod' ? t('buyNowModal.payOnDelivery') : t('buyNowModal.paymentProcessed')}
                 </p>
                 <div className="modal-success-summary">
                   <img src={product.imageUrl} alt={product.name} />
@@ -267,124 +295,117 @@ export default function ProductDetailPage() {
                 </div>
                 <div className="modal-success-actions">
                   <button className="btn btn-primary btn-full" onClick={() => { closeModal(); navigate('/orders'); }}>
-                    View Orders
+                    {t('buyNowModal.viewOrders')}
                   </button>
                   <button className="btn btn-ghost btn-full" onClick={closeModal}>
-                    Continue Shopping
+                    {t('buyNowModal.continueShopping')}
                   </button>
                 </div>
               </div>
             ) : (
-              /* ── ORDER FORM ── */
               <>
                 <div className="modal-header">
-                  <h2>Quick Checkout</h2>
-                  <p>Complete your purchase</p>
+                  <h2>{t('buyNowModal.quickCheckout')}</h2>
+                  <p>{t('buyNowModal.completePurchase')}</p>
                 </div>
 
-                {/* Product Summary */}
                 <div className="modal-product">
                   <img src={product.imageUrl} alt={product.name} />
                   <div className="modal-product-info">
                     <span className="modal-product-name">{product.name}</span>
                     <span className="modal-product-brand">{product.brand}</span>
                     <div className="modal-product-row">
-                      <span>Qty: {qty} × ${product.price?.toFixed(2)}</span>
+                      <span>{t('buyNowModal.qty')}: {qty} × ${product.price?.toFixed(2)}</span>
                       <strong>${lineTotal}</strong>
                     </div>
                   </div>
                 </div>
 
-                {/* Contact Info */}
                 <div className="modal-section">
-                  <h4><span className="modal-step">1</span> Contact Details</h4>
+                  <h4><span className="modal-step">1</span> {t('buyNowModal.contactDetails')}</h4>
                   <div className="modal-form-grid">
                     <div className="modal-field">
-                      <label>Full Name *</label>
-                      <input value={orderForm.fullName} onChange={e => setOrderForm({...orderForm, fullName: e.target.value})} placeholder="Franklin" />
+                      <label>{t('buyNowModal.fullName')} *</label>
+                      <input value={orderForm.fullName} onChange={e => setOrderForm({...orderForm, fullName: e.target.value})} />
                     </div>
                     <div className="modal-field">
-                      <label>Email *</label>
-                      <input value={orderForm.email} onChange={e => setOrderForm({...orderForm, email: e.target.value})} placeholder="you@email.com" />
+                      <label>{t('buyNowModal.email')} *</label>
+                      <input value={orderForm.email} onChange={e => setOrderForm({...orderForm, email: e.target.value})} />
                     </div>
                     <div className="modal-field">
-                      <label>Phone</label>
-                      <input value={orderForm.phone} onChange={e => setOrderForm({...orderForm, phone: e.target.value})} placeholder="+91 98765 43210" />
+                      <label>{t('buyNowModal.phone')}</label>
+                      <input value={orderForm.phone} onChange={e => setOrderForm({...orderForm, phone: e.target.value})} />
                     </div>
                   </div>
                 </div>
 
-                {/* Shipping Address */}
                 <div className="modal-section">
-                  <h4><MapPin size={14} /> <span className="modal-step">2</span> Shipping Address</h4>
+                  <h4><MapPin size={14} /> <span className="modal-step">2</span> {t('buyNowModal.shippingAddress')}</h4>
                   <div className="modal-form-grid">
                     <div className="modal-field full">
-                      <label>Street Address *</label>
-                      <input value={orderForm.street} onChange={e => setOrderForm({...orderForm, street: e.target.value})} placeholder="123 Main Street, Apt 4B" />
+                      <label>{t('buyNowModal.streetAddress')} *</label>
+                      <input value={orderForm.street} onChange={e => setOrderForm({...orderForm, street: e.target.value})} />
                     </div>
                     <div className="modal-field">
-                      <label>City *</label>
-                      <input value={orderForm.city} onChange={e => setOrderForm({...orderForm, city: e.target.value})} placeholder="Vellore" />
+                      <label>{t('buyNowModal.city')} *</label>
+                      <input value={orderForm.city} onChange={e => setOrderForm({...orderForm, city: e.target.value})} />
                     </div>
                     <div className="modal-field">
-                      <label>State *</label>
-                      <input value={orderForm.state} onChange={e => setOrderForm({...orderForm, state: e.target.value})} placeholder="Tamil Nadu" />
+                      <label>{t('buyNowModal.state')} *</label>
+                      <input value={orderForm.state} onChange={e => setOrderForm({...orderForm, state: e.target.value})} />
                     </div>
                     <div className="modal-field">
-                      <label>ZIP Code *</label>
-                      <input value={orderForm.zipCode} onChange={e => setOrderForm({...orderForm, zipCode: e.target.value})} placeholder="632001" />
+                      <label>{t('buyNowModal.zipCode')} *</label>
+                      <input value={orderForm.zipCode} onChange={e => setOrderForm({...orderForm, zipCode: e.target.value})} />
                     </div>
                     <div className="modal-field">
-                      <label>Country *</label>
-                      <input value={orderForm.country} onChange={e => setOrderForm({...orderForm, country: e.target.value})} placeholder="India" />
+                      <label>{t('buyNowModal.country')} *</label>
+                      <input value={orderForm.country} onChange={e => setOrderForm({...orderForm, country: e.target.value})} />
                     </div>
                   </div>
                 </div>
 
-                {/* Payment Method */}
                 <div className="modal-section">
-                  <h4><span className="modal-step">3</span> Payment</h4>
+                  <h4><span className="modal-step">3</span> {t('buyNowModal.payment')}</h4>
                   <div className="modal-payment-options">
                     <div className={`modal-payment ${paymentMethod === 'cod' ? 'active' : ''}`} onClick={() => setPaymentMethod('cod')}>
                       <div className={`modal-radio ${paymentMethod === 'cod' ? 'checked' : ''}`} />
                       <Truck size={18} />
                       <div>
-                        <strong>Cash on Delivery</strong>
-                        <span>Pay when you receive</span>
+                        <strong>{t('buyNowModal.cod')}</strong>
+                        <span>{t('buyNowModal.codDesc')}</span>
                       </div>
                     </div>
                     <div className={`modal-payment ${paymentMethod === 'stripe' ? 'active' : ''}`} onClick={() => setPaymentMethod('stripe')}>
                       <div className={`modal-radio ${paymentMethod === 'stripe' ? 'checked' : ''}`} />
                       <CreditCard size={18} />
                       <div>
-                        <strong>Pay with Card</strong>
-                        <span>Visa, Mastercard, UPI</span>
+                        <strong>{t('buyNowModal.payWithCard')}</strong>
+                        <span>{t('buyNowModal.cardDesc')}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Order Total */}
                 <div className="modal-totals">
-                  <div className="modal-total-row"><span>Subtotal</span><span>${lineTotal}</span></div>
-                  <div className="modal-total-row"><span>Tax (8%)</span><span>${tax}</span></div>
-                  <div className="modal-total-row"><span>Shipping</span><span>{shipping > 0 ? `$${shipping.toFixed(2)}` : 'Free'}</span></div>
-                  <div className="modal-total-row total"><span>Total</span><span>${orderTotal}</span></div>
+                  <div className="modal-total-row"><span>{t('buyNowModal.subtotal')}</span><span>${lineTotal}</span></div>
+                  <div className="modal-total-row"><span>{t('buyNowModal.tax')}</span><span>${tax}</span></div>
+                  <div className="modal-total-row"><span>{t('buyNowModal.shipping')}</span><span>{shipping > 0 ? `$${shipping.toFixed(2)}` : t('buyNowModal.free')}</span></div>
+                  <div className="modal-total-row total"><span>{t('buyNowModal.total')}</span><span>${orderTotal}</span></div>
                 </div>
 
-                {/* Place Order Button */}
                 <button className="btn btn-primary btn-full btn-lg modal-order-btn" onClick={handlePlaceOrder} disabled={processing}>
                   {processing ? (
-                    <><Loader size={18} className="spin" /> Processing...</>
+                    <><Loader size={18} className="spin" /> {t('buyNowModal.processing')}</>
                   ) : paymentMethod === 'stripe' ? (
-                    <><CreditCard size={18} /> Pay ${orderTotal}</>
+                    <><CreditCard size={18} /> {t('buyNowModal.pay')} ${orderTotal}</>
                   ) : (
-                    <><Truck size={18} /> Place Order (COD)</>
+                    <><Truck size={18} /> {t('buyNowModal.placeOrderCod')}</>
                   )}
                 </button>
 
                 <div className="modal-trust">
-                  <Shield size={13} /> <span>Secure checkout — encrypted & protected</span>
+                  <Shield size={13} /> <span>{t('buyNowModal.secureCheckout')}</span>
                 </div>
               </>
             )}

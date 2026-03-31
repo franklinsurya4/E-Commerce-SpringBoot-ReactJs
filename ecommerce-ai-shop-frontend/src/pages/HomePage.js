@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowRight, Sparkles, Truck, Shield, RotateCcw, Star,
   Zap, ChevronRight, TrendingUp, Clock, Gift, Heart,
@@ -44,6 +45,9 @@ function AnimatedCounter({ target, duration = 2000 }) {
 }
 
 function ProductCard({ product, index }) {
+  const { t } = useTranslation();
+  const tc = (cat) => t(`categories.${cat}`, { defaultValue: cat });
+
   return (
     <Link
       to={`/products/${product.id}`}
@@ -54,7 +58,7 @@ function ProductCard({ product, index }) {
         <img src={product.imageUrl} alt={product.name} loading="lazy" />
         {product.originalPrice && (
           <div className="hp-sale-tag">
-            {Math.round((1 - product.price / product.originalPrice) * 100)}% OFF
+            {Math.round((1 - product.price / product.originalPrice) * 100)}% {t('home.off')}
           </div>
         )}
         <button className="hp-wishlist-btn" onClick={e => e.preventDefault()}>
@@ -62,7 +66,7 @@ function ProductCard({ product, index }) {
         </button>
       </div>
       <div className="hp-product-body">
-        <span className="hp-product-cat">{product.category}</span>
+        <span className="hp-product-cat">{tc(product.category)}</span>
         <h3 className="hp-product-name">{product.name}</h3>
         <div className="hp-product-rating">
           <div className="hp-stars">
@@ -89,13 +93,23 @@ function ProductCard({ product, index }) {
 }
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
+
+  const tc = (cat) => t(`categories.${cat}`, { defaultValue: cat });
 
   useEffect(() => {
     productAPI.getFeatured().then(r => setFeatured(r.data.data || [])).catch(() => {});
     productAPI.getCategories().then(r => setCategories(r.data.data || [])).catch(() => {});
   }, []);
+
+  const trustItems = [
+    { icon: Truck, title: t('home.freeShipping'), desc: t('home.freeShippingDesc') },
+    { icon: Shield, title: t('home.securePayment'), desc: t('home.securePaymentDesc') },
+    { icon: RotateCcw, title: t('home.returns'), desc: t('home.returnsDesc') },
+    { icon: Headphones, title: t('home.support'), desc: t('home.supportDesc') },
+  ];
 
   return (
     <div className="hp">
@@ -109,30 +123,29 @@ export default function HomePage() {
         <div className="hp-hero-content">
           <div className="hp-hero-tag">
             <Zap size={14} />
-            <span>Online E-Commerce Shopping</span>
+            <span>{t('home.heroTag')}</span>
           </div>
 
           <h1 className="hp-hero-title">
-            <span className="hp-title-line hp-title-line--1">Discover Products</span>
+            <span className="hp-title-line hp-title-line--1">{t('home.heroTitle1')}</span>
             <span className="hp-title-line hp-title-line--2">
-              Curated by{' '}
-              <span className="hp-title-gradient">QualityProducts</span>
+              {t('home.heroTitle2')}{' '}
+              <span className="hp-title-gradient">{t('home.heroBrand')}</span>
             </span>
           </h1>
 
           <p className="hp-hero-desc">
-            Smart recommendations, instant answers, and a personalized shopping
-            experience crafted just for you.
+            {t('home.heroDesc')}
           </p>
 
           <div className="hp-hero-cta">
             <Link to="/products" className="hp-btn-hero">
               <ShoppingBag size={18} />
-              Shop Now
+              {t('home.shopNow')}
               <ArrowRight size={16} />
             </Link>
             <Link to="/tracking" className="hp-btn-hero-outline">
-              Track Order
+              {t('home.trackOrder')}
               <ChevronRight size={16} />
             </Link>
           </div>
@@ -140,18 +153,18 @@ export default function HomePage() {
           {/* Stats */}
           <div className="hp-hero-stats">
             <div className="hp-stat">
-              <strong><AnimatedCounter target={15000} />+</strong>
-              <span>Products</span>
+              <strong><AnimatedCounter target={100} />+</strong>
+              <span>{t('home.statProducts')}</span>
             </div>
             <div className="hp-stat-divider" />
             <div className="hp-stat">
-              <strong><AnimatedCounter target={50000} />+</strong>
-              <span>Happy Customers</span>
+              <strong><AnimatedCounter target={1000} />+</strong>
+              <span>{t('home.statCustomers')}</span>
             </div>
             <div className="hp-stat-divider" />
             <div className="hp-stat">
-              <strong><AnimatedCounter target={4} />.9</strong>
-              <span>Avg Rating</span>
+              <strong><AnimatedCounter target={4} />.9★</strong>
+              <span>{t('home.statRating')}</span>
             </div>
           </div>
         </div>
@@ -159,13 +172,8 @@ export default function HomePage() {
 
       {/* ── TRUST BAR ── */}
       <section className="hp-trust-bar">
-        {[
-          { icon: Truck, title: 'Free Shipping', desc: 'On orders over $50' },
-          { icon: Shield, title: 'Secure Payment', desc: '256-bit encryption' },
-          { icon: RotateCcw, title: '30-Day Returns', desc: 'No questions asked' },
-          { icon: Headphones, title: '24/7 Support', desc: 'Always here to help' },
-        ].map(({ icon: Icon, title, desc }, i) => (
-          <div key={title} className="hp-trust-item" style={{ animationDelay: `${i * 0.1}s` }}>
+        {trustItems.map(({ icon: Icon, title, desc }, i) => (
+          <div key={i} className="hp-trust-item" style={{ animationDelay: `${i * 0.1}s` }}>
             <div className="hp-trust-icon"><Icon size={22} strokeWidth={1.8} /></div>
             <div>
               <h4>{title}</h4>
@@ -180,11 +188,11 @@ export default function HomePage() {
         <section className="hp-section">
           <div className="hp-section-head">
             <div>
-              <span className="hp-section-label"><Sparkles size={14} /> Browse</span>
-              <h2>Shop by Category</h2>
+              <span className="hp-section-label"><Sparkles size={14} /> {t('home.browse')}</span>
+              <h2>{t('home.shopByCategory')}</h2>
             </div>
             <Link to="/products" className="hp-see-all">
-              View All <ArrowRight size={15} />
+              {t('home.viewAll')} <ArrowRight size={15} />
             </Link>
           </div>
           <div className="hp-cat-grid">
@@ -198,7 +206,7 @@ export default function HomePage() {
                   style={{ animationDelay: `${i * 0.06}s` }}
                 >
                   <div className="hp-cat-icon"><Icon size={28} strokeWidth={1.5} /></div>
-                  <span className="hp-cat-name">{cat}</span>
+                  <span className="hp-cat-name">{tc(cat)}</span>
                   <ChevronRight size={16} className="hp-cat-arrow" />
                 </Link>
               );
@@ -212,28 +220,28 @@ export default function HomePage() {
         <div className="hp-banners">
           <div className="hp-banner hp-banner--deal">
             <div className="hp-banner-content">
-              <span className="hp-banner-tag"><Clock size={14} /> Limited Time</span>
-              <h3>Flash Deals</h3>
-              <p>Up to 70% off on top brands</p>
-              <Link to="/products" className="hp-banner-btn">Shop Deals <ArrowRight size={14} /></Link>
+              <span className="hp-banner-tag"><Clock size={14} /> {t('home.limitedTime')}</span>
+              <h3>{t('home.flashDeals')}</h3>
+              <p>{t('home.flashDealsDesc')}</p>
+              <Link to="/products" className="hp-banner-btn">{t('home.shopDeals')} <ArrowRight size={14} /></Link>
             </div>
             <div className="hp-banner-deco" />
           </div>
           <div className="hp-banner hp-banner--new">
             <div className="hp-banner-content">
-              <span className="hp-banner-tag"><TrendingUp size={14} /> Trending</span>
-              <h3>New Arrivals</h3>
-              <p>Fresh styles, just dropped</p>
-              <Link to="/products" className="hp-banner-btn">Explore <ArrowRight size={14} /></Link>
+              <span className="hp-banner-tag"><TrendingUp size={14} /> {t('home.trending')}</span>
+              <h3>{t('home.newArrivals')}</h3>
+              <p>{t('home.newArrivalsDesc')}</p>
+              <Link to="/products" className="hp-banner-btn">{t('home.explore')} <ArrowRight size={14} /></Link>
             </div>
             <div className="hp-banner-deco" />
           </div>
           <div className="hp-banner hp-banner--reward">
             <div className="hp-banner-content">
-              <span className="hp-banner-tag"><Award size={14} /> Rewards</span>
-              <h3>Earn Points</h3>
-              <p>Get cashback on every order</p>
-              <Link to="/products" className="hp-banner-btn">Learn More <ArrowRight size={14} /></Link>
+              <span className="hp-banner-tag"><Award size={14} /> {t('home.rewards')}</span>
+              <h3>{t('home.earnPoints')}</h3>
+              <p>{t('home.earnPointsDesc')}</p>
+              <Link to="/products" className="hp-banner-btn">{t('home.learnMore')} <ArrowRight size={14} /></Link>
             </div>
             <div className="hp-banner-deco" />
           </div>
@@ -244,11 +252,11 @@ export default function HomePage() {
       <section className="hp-section">
         <div className="hp-section-head">
           <div>
-            <span className="hp-section-label"><TrendingUp size={14} /> Popular</span>
-            <h2>Featured Products</h2>
+            <span className="hp-section-label"><TrendingUp size={14} /> {t('home.popular')}</span>
+            <h2>{t('home.featuredProducts')}</h2>
           </div>
           <Link to="/products" className="hp-see-all">
-            View All <ArrowRight size={15} />
+            {t('home.viewAll')} <ArrowRight size={15} />
           </Link>
         </div>
         <div className="hp-products-grid">
@@ -263,11 +271,11 @@ export default function HomePage() {
         <div className="hp-newsletter">
           <div className="hp-newsletter-glow" />
           <Gift size={36} strokeWidth={1.5} className="hp-newsletter-icon" />
-          <h2>Get 10% Off Your First Order</h2>
-          <p>Subscribe for exclusive deals, new arrivals, and insider-only discounts.</p>
+          <h2>{t('home.newsletterTitle')}</h2>
+          <p>{t('home.newsletterDesc')}</p>
           <div className="hp-newsletter-form">
-            <input type="email" placeholder="Enter your email address" />
-            <button className="hp-btn-hero">Subscribe <ArrowRight size={16} /></button>
+            <input type="email" placeholder={t('home.emailPlaceholder')} />
+            <button className="hp-btn-hero">{t('home.subscribe')} <ArrowRight size={16} /></button>
           </div>
         </div>
       </section>
