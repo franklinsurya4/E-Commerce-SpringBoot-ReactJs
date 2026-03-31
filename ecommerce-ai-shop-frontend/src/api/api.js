@@ -34,14 +34,33 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
 };
 
-// Products
+// 🔥 Products API - Fixed: Removed duplicate getById
 export const productAPI = {
   getAll: () => api.get('/products'),
   getFeatured: () => api.get('/products/featured'),
-  getById: (id) => api.get(`/products/${id}`),
+  
+  // ✅ Single, clean getById with ID conversion
+  getById: (id) => {
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    return api.get(`/products/${numericId}`);
+  },
+  
   getByCategory: (cat) => api.get(`/products/category/${cat}`),
   search: (q) => api.get(`/products/search?q=${encodeURIComponent(q)}`),
   getCategories: () => api.get('/products/categories'),
+  
+  // 🔥 Price Drop Endpoints
+  getPriceDrops: () => api.get('/products/price-drops'),
+  getPriceDropsByCategory: (category) => api.get(`/products/price-drops/category/${category}`),
+  getPriceDropsSorted: () => api.get('/products/price-drops/sorted'),
+  getPriceDropInfo: (id) => api.get(`/products/${id}/price-drop-info`),
+  
+  // CRUD
+  create: (productData) => api.post('/products', productData),
+  update: (id, productData) => api.put(`/products/${id}`, productData),
+  triggerPriceDrop: (id, data) => api.patch(`/products/${id}/price-drop`, data),
+  endPriceDrop: (id) => api.delete(`/products/${id}/price-drop`),
+  delete: (id) => api.delete(`/products/${id}`),
 };
 
 // Cart
@@ -87,6 +106,5 @@ export const reviewAPI = {
 export const chatAPI = {
   send: (data) => api.post('/chat', data),
 };
-
 
 export default api;

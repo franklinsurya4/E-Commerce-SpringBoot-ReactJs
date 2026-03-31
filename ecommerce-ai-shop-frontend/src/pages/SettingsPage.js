@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGear, faFileContract, faShieldHalved, faCookieBite, faEnvelope, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import '../styles/settings-mobile.css';
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
@@ -75,30 +76,87 @@ export default function SettingsPage() {
     {
       id: 'terms',
       icon: faFileContract,
-      title: t('settings.termsOfService'),
+      title: 'Terms of Service',
       lastUpdated: '2026-01-15',
-      content: t('settings.termsContent'),
+      content: `1. Acceptance of Terms
+By accessing and using this application, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use this service.
+
+2. User Account
+You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account.
+
+3. Intellectual Property
+All content, features, and functionality available through this service, including text, graphics, logos, and software, are the exclusive property of the company and are protected by copyright laws.
+
+4. Prohibited Conduct
+You agree not to use the service for any unlawful purpose or to solicit others to perform or participate in any unlawful acts. You agree not to interfere with or disrupt the service or servers.
+
+5. Termination
+We reserve the right to terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.
+
+6. Disclaimer of Warranties
+Your use of the service is at your sole risk. The service is provided on an "AS IS" and "AS AVAILABLE" basis without any warranty of any kind.`
     },
     {
       id: 'privacy',
       icon: faShieldHalved,
-      title: t('settings.privacyPolicy'),
+      title: 'Privacy Policy',
       lastUpdated: '2026-02-01',
-      content: t('settings.privacyContent'),
+      content: `1. Information Collection
+We collect information you provide directly to us, such as when you create an account, update your profile, or communicate with us. This may include your name, email address, and phone number.
+
+2. How We Use Information
+We use the information we collect to provide, maintain, and improve our services, to process transactions, to send you technical notices and support messages, and to communicate with you about products, services, and events.
+
+3. Information Sharing
+We do not sell your personal information. We may share information with vendors, service providers, and affiliates who need access to such information to carry out work on our behalf.
+
+4. Data Security
+We implement reasonable security measures designed to protect your information from unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the Internet is 100% secure.
+
+5. Your Rights
+You have the right to access, update, or delete your personal information. You may do so through your account settings or by contacting our support team.
+
+6. Changes to This Policy
+We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last Updated" date.`
     },
     {
       id: 'cookie',
       icon: faCookieBite,
-      title: t('settings.cookiePolicy'),
+      title: 'Cookie Policy',
       lastUpdated: '2025-12-10',
-      content: t('settings.cookieContent'),
+      content: `1. What Are Cookies
+Cookies are small text files that are placed on your device (computer, smartphone, or tablet) when you visit a website. They are widely used to make websites work more efficiently.
+
+2. Types of Cookies We Use
+- Essential Cookies: These are necessary for the website to function properly.
+- Performance Cookies: These collect information about how visitors use a website, for instance, which pages visitors go to most often.
+- Functionality Cookies: These allow the website to remember choices you make (such as your user name, language, or the region you are in).
+
+3. Third-Party Cookies
+In addition to our own cookies, we may also use various third-party cookies to report usage statistics of the service and deliver advertisements on and through the service.
+
+4. Managing Cookies
+Most web browsers allow some control of most cookies through the browser settings. You can set your browser to refuse all or some cookies, but note that some parts of the service may not function correctly without them.`
     },
     {
       id: 'refund',
       icon: faEnvelope,
-      title: t('settings.refundPolicy'),
+      title: 'Refund Policy',
       lastUpdated: '2026-01-20',
-      content: t('settings.refundContent'),
+      content: `1. Eligibility for Refunds
+To be eligible for a refund, your request must be made within 14 days of purchase. The item or service must be unused and in the same condition that you received it.
+
+2. Non-Refundable Items
+Certain types of items are exempt from being refunded, such as downloadable software, gift cards, and personal care goods unless defective.
+
+3. Refund Process
+Once your return is received and inspected, we will send you an email to notify you that we have received your returned item. If approved, your credit card or original method of payment will be credited.
+
+4. Late or Missing Refunds
+If you haven't received a refund yet, first check your bank account again. Then contact your credit card company, as it may take some time before your refund is officially posted.
+
+5. Contact Us
+If you have any questions about our Refund Policy, please contact us at support@example.com.`
     },
   ];
 

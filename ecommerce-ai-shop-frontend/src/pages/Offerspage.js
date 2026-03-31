@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Flame, Clock, Tag, ChevronRight, PartyPopper, ShoppingBag,
   Star, Heart, Percent, Gift, ArrowRight, Sparkles, Copy,
@@ -15,10 +16,15 @@ const OFFERS = [
   {
     id: 'diwali-mega',
     type: 'festival',
-    title: 'Diwali Mega Sale',
-    subtitle: 'Up to 70% off on Electronics, Fashion & Home',
+    typeKey: 'offers.types.festival',
+    typeDefault: 'Festival Offer',
+    titleKey: 'offers.diwali.title',
+    titleDefault: 'Diwali Mega Sale',
+    subtitleKey: 'offers.diwali.subtitle',
+    subtitleDefault: 'Up to 70% off on Electronics, Fashion & Home',
     code: 'DIWALI70',
-    discount: 'Extra 10% Off',
+    discountKey: 'offers.diwali.discount',
+    discountDefault: 'Extra 10% Off',
     color: '#e8735a',
     colorSoft: 'rgba(232, 115, 90, 0.1)',
     icon: PartyPopper,
@@ -29,10 +35,15 @@ const OFFERS = [
   {
     id: 'flash-sale',
     type: 'flash',
-    title: 'Flash Sale',
-    subtitle: 'Smartphones starting at $199. Limited stock!',
+    typeKey: 'offers.types.flash',
+    typeDefault: 'Flash Sale',
+    titleKey: 'offers.flash.title',
+    titleDefault: 'Flash Sale',
+    subtitleKey: 'offers.flash.subtitle',
+    subtitleDefault: 'Smartphones starting at $199. Limited stock!',
     code: null,
-    discount: 'Up to 50% Off',
+    discountKey: 'offers.flash.discount',
+    discountDefault: 'Up to 50% Off',
     color: '#ef4444',
     colorSoft: 'rgba(239, 68, 68, 0.1)',
     icon: Flame,
@@ -43,10 +54,15 @@ const OFFERS = [
   {
     id: 'easter-special',
     type: 'festival',
-    title: 'Easter Weekend Special',
-    subtitle: 'Buy 2, Get 1 Free on all Home & Living products',
+    typeKey: 'offers.types.festival',
+    typeDefault: 'Festival Offer',
+    titleKey: 'offers.easter.title',
+    titleDefault: 'Easter Weekend Special',
+    subtitleKey: 'offers.easter.subtitle',
+    subtitleDefault: 'Buy 2, Get 1 Free on all Home & Living products',
     code: null,
-    discount: 'Buy 2 Get 1 Free',
+    discountKey: 'offers.easter.discount',
+    discountDefault: 'Buy 2 Get 1 Free',
     color: '#2ecc71',
     colorSoft: 'rgba(46, 204, 113, 0.1)',
     icon: Gift,
@@ -57,10 +73,15 @@ const OFFERS = [
   {
     id: 'new-user',
     type: 'coupon',
-    title: 'New User Exclusive',
-    subtitle: 'Use code LOYAL15 for 15% off your next purchase',
+    typeKey: 'offers.types.coupon',
+    typeDefault: 'Exclusive Coupon',
+    titleKey: 'offers.newUser.title',
+    titleDefault: 'New User Exclusive',
+    subtitleKey: 'offers.newUser.subtitle',
+    subtitleDefault: 'Use code LOYAL15 for 15% off your next purchase',
     code: 'LOYAL15',
-    discount: '15% Off',
+    discountKey: 'offers.newUser.discount',
+    discountDefault: '15% Off',
     color: '#ec4899',
     colorSoft: 'rgba(236, 72, 153, 0.1)',
     icon: Percent,
@@ -71,10 +92,15 @@ const OFFERS = [
   {
     id: 'spring-collection',
     type: 'seasonal',
-    title: 'Spring Collection 2026',
-    subtitle: '50+ new styles — fresh fashion curated for you',
+    typeKey: 'offers.types.seasonal',
+    typeDefault: 'Seasonal',
+    titleKey: 'offers.spring.title',
+    titleDefault: 'Spring Collection 2026',
+    subtitleKey: 'offers.spring.subtitle',
+    subtitleDefault: '50+ new styles — fresh fashion curated for you',
     code: 'SPRING20',
-    discount: '20% Off New Arrivals',
+    discountKey: 'offers.spring.discount',
+    discountDefault: '20% Off New Arrivals',
     color: '#d4a843',
     colorSoft: 'rgba(212, 168, 67, 0.1)',
     icon: Sparkles,
@@ -83,6 +109,9 @@ const OFFERS = [
     discountPercent: 20,
   },
 ];
+
+/* ── Helper: translate category like ProductsPage ── */
+const tc = (cat, t) => t(`categories.${cat}`, { defaultValue: cat });
 
 /* ── Hooks & Sub-Components ── */
 
@@ -94,7 +123,7 @@ function useCountdown(expiresAt) {
     const tick = () => {
       const diff = new Date(expiresAt).getTime() - Date.now();
       if (diff <= 0) {
-        setRemaining({ text: 'Expired', expired: true });
+        setRemaining({ text: 'offers.time.expired', expired: true });
         return;
       }
       const d = Math.floor(diff / 86400000);
@@ -103,9 +132,9 @@ function useCountdown(expiresAt) {
       const s = Math.floor((diff % 60000) / 1000);
 
       if (d > 0) {
-        setRemaining({ text: `${d}d ${h}h ${m}m`, expired: false });
+        setRemaining({ text: `offers.time.daysHours:${d}:${h}:${m}`, expired: false });
       } else {
-        setRemaining({ text: `${h}h ${m}m ${s}s`, expired: false });
+        setRemaining({ text: `offers.time.hoursMinutes:${h}:${m}:${s}`, expired: false });
       }
     };
     tick();
@@ -116,7 +145,7 @@ function useCountdown(expiresAt) {
   return remaining;
 }
 
-function CopyCodeButton({ code, color }) {
+function CopyCodeButton({ code, color, t }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (e) => {
@@ -134,18 +163,35 @@ function CopyCodeButton({ code, color }) {
       className="offer-copy-btn" 
       onClick={handleCopy} 
       style={{ '--offer-color': color }}
-      aria-label="Copy code"
+      aria-label={t('offers.actions.copyCode', 'Copy code')}
     >
       <span className="offer-code-text">{code}</span>
       {copied ? <Check size={14} /> : <Copy size={14} />}
-      <span className="offer-copy-label">{copied ? 'Copied!' : 'Copy'}</span>
+      <span className="offer-copy-label">{copied ? t('offers.actions.copied', 'Copied!') : t('offers.actions.copy', 'Copy')}</span>
     </button>
   );
 }
 
-function OfferBanner({ offer, isActive, onClick }) {
+function OfferBanner({ offer, isActive, onClick, t }) {
   const countdown = useCountdown(offer.expiresAt);
   const Icon = offer.icon;
+  const typeLabel = t(offer.typeKey, offer.typeDefault);
+
+  // Format countdown text
+  const formatCountdown = (text) => {
+    if (text.includes('offers.time.')) {
+      const parts = text.split(':');
+      const key = parts[0];
+      if (key === 'offers.time.expired') return t(key, 'Expired');
+      if (key === 'offers.time.daysHours') {
+        return t(key, '{{d}}d {{h}}h {{m}}m', { d: parts[1], h: parts[2], m: parts[3] });
+      }
+      if (key === 'offers.time.hoursMinutes') {
+        return t(key, '{{h}}h {{m}}m {{s}}s', { h: parts[1], m: parts[2], s: parts[3] });
+      }
+    }
+    return text;
+  };
 
   return (
     <button
@@ -160,25 +206,47 @@ function OfferBanner({ offer, isActive, onClick }) {
       </div>
       <div className="offer-banner-body">
         <div className="offer-banner-top">
-          <span className="offer-banner-type">{offer.type}</span>
+          <span className="offer-banner-type">{typeLabel}</span>
           {!countdown.expired && (
             <span className="offer-banner-timer">
               <Clock size={10} />
-              {countdown.text}
+              {formatCountdown(countdown.text)}
             </span>
           )}
         </div>
-        <h3 className="offer-banner-title">{offer.title}</h3>
-        <span className="offer-banner-discount">{offer.discount}</span>
+        <h3 className="offer-banner-title">{t(offer.titleKey, offer.titleDefault)}</h3>
+        <span className="offer-banner-discount">{t(offer.discountKey, offer.discountDefault)}</span>
       </div>
       {isActive && <div className="offer-banner-indicator" />}
     </button>
   );
 }
 
-function OfferHero({ offer }) {
+function OfferHero({ offer, t }) {
   const countdown = useCountdown(offer.expiresAt);
   const Icon = offer.icon;
+
+  const formatCountdown = (text) => {
+    if (text.includes('offers.time.')) {
+      const parts = text.split(':');
+      const key = parts[0];
+      if (key === 'offers.time.expired') return t(key, 'Expired');
+      if (key === 'offers.time.daysHours') {
+        return t(key, '{{d}}d {{h}}h {{m}}m', { d: parts[1], h: parts[2], m: parts[3] });
+      }
+      if (key === 'offers.time.hoursMinutes') {
+        return t(key, '{{h}}h {{m}}m {{s}}s', { h: parts[1], m: parts[2], s: parts[3] });
+      }
+    }
+    return text;
+  };
+
+  const getTypeBadge = () => {
+    if (offer.type === 'flash') return t('offers.badges.flash', 'Flash Sale');
+    if (offer.type === 'festival') return t('offers.badges.festival', 'Festival Offer');
+    if (offer.type === 'coupon') return t('offers.badges.coupon', 'Exclusive Coupon');
+    return t('offers.badges.seasonal', 'Seasonal');
+  };
 
   return (
     <div className="offer-hero" style={{ '--offer-color': offer.color, '--offer-soft': offer.colorSoft }}>
@@ -189,16 +257,11 @@ function OfferHero({ offer }) {
         <div className="offer-hero-left">
           <div className="offer-hero-badge">
             <Icon size={14} />
-            <span>
-              {offer.type === 'flash' ? 'Flash Sale'
-                : offer.type === 'festival' ? 'Festival Offer'
-                : offer.type === 'coupon' ? 'Exclusive Coupon'
-                : 'Seasonal'}
-            </span>
+            <span>{getTypeBadge()}</span>
           </div>
 
-          <h1 className="offer-hero-title">{offer.title}</h1>
-          <p className="offer-hero-subtitle">{offer.subtitle}</p>
+          <h1 className="offer-hero-title">{t(offer.titleKey, offer.titleDefault)}</h1>
+          <p className="offer-hero-subtitle">{t(offer.subtitleKey, offer.subtitleDefault)}</p>
 
           <div className="offer-hero-meta">
             {offer.categories.length > 0 && (
@@ -209,24 +272,24 @@ function OfferHero({ offer }) {
                     to={`/products?category=${cat}`}
                     className="offer-hero-cat"
                   >
-                    {cat}
+                    {tc(cat, t)}
                   </Link>
                 ))}
               </div>
             )}
-            {offer.code && <CopyCodeButton code={offer.code} color={offer.color} />}
+            {offer.code && <CopyCodeButton code={offer.code} color={offer.color} t={t} />}
           </div>
         </div>
 
         <div className="offer-hero-right">
           <div className="offer-hero-discount-circle">
             <span className="offer-hero-pct">{offer.discountPercent}%</span>
-            <span className="offer-hero-off">OFF</span>
+            <span className="offer-hero-off">{t('offers.hero.off', 'OFF')}</span>
           </div>
           {!countdown.expired && (
             <div className="offer-hero-countdown">
               <Clock size={12} />
-              <span>Ends in <strong>{countdown.text}</strong></span>
+              <span>{t('offers.hero.endsIn', 'Ends in')} <strong>{formatCountdown(countdown.text)}</strong></span>
             </div>
           )}
         </div>
@@ -235,7 +298,7 @@ function OfferHero({ offer }) {
   );
 }
 
-function OfferProductCard({ product, index, discountPercent }) {
+function OfferProductCard({ product, index, discountPercent, t }) {
   const fakeOriginal = product.originalPrice || (product.price * (1 + discountPercent / 100));
   const savings = fakeOriginal - product.price;
 
@@ -249,7 +312,7 @@ function OfferProductCard({ product, index, discountPercent }) {
         <img src={product.imageUrl} alt={product.name} loading="lazy" />
         <div className="offer-product-tag">
           <Zap size={10} />
-          {discountPercent}% OFF
+          {discountPercent}% {t('offers.product.off', 'OFF')}
         </div>
         <button className="offer-product-wish" onClick={e => e.preventDefault()}>
           <Heart size={16} />
@@ -257,7 +320,7 @@ function OfferProductCard({ product, index, discountPercent }) {
       </div>
 
       <div className="offer-product-body">
-        <span className="offer-product-cat">{product.category}</span>
+        <span className="offer-product-cat">{tc(product.category, t)}</span>
         <h3 className="offer-product-name">{product.name}</h3>
 
         <div className="offer-product-rating">
@@ -280,21 +343,36 @@ function OfferProductCard({ product, index, discountPercent }) {
         </div>
         
         <div className="offer-product-save">
-           Save ${savings.toFixed(2)}
+           {t('offers.product.save', 'Save')} ${savings.toFixed(2)}
         </div>
 
         <div className="offer-product-cta">
           <ShoppingBag size={14} />
-          <span>View Deal</span>
+          <span>{t('offers.product.viewDeal', 'View Deal')}</span>
         </div>
       </div>
     </Link>
   );
 }
 
-function CouponCard({ offer }) {
+function CouponCard({ offer, t }) {
   const countdown = useCountdown(offer.expiresAt);
   const Icon = offer.icon;
+
+  const formatCountdown = (text) => {
+    if (text.includes('offers.time.')) {
+      const parts = text.split(':');
+      const key = parts[0];
+      if (key === 'offers.time.expired') return t(key, 'Expired');
+      if (key === 'offers.time.daysHours') {
+        return t(key, '{{d}}d {{h}}h {{m}}m', { d: parts[1], h: parts[2], m: parts[3] });
+      }
+      if (key === 'offers.time.hoursMinutes') {
+        return t(key, '{{h}}h {{m}}m {{s}}s', { h: parts[1], m: parts[2], s: parts[3] });
+      }
+    }
+    return text;
+  };
 
   return (
     <div className="offers-coupon-card" style={{ '--offer-color': offer.color }}>
@@ -303,16 +381,16 @@ function CouponCard({ offer }) {
           <Icon size={20} />
         </div>
         <div className="offers-coupon-info">
-          <h4>{offer.title}</h4>
-          <p>{offer.discount}</p>
+          <h4>{t(offer.titleKey, offer.titleDefault)}</h4>
+          <p>{t(offer.discountKey, offer.discountDefault)}</p>
           {!countdown.expired && (
             <span className="offers-coupon-timer">
-              <Clock size={10} /> {countdown.text}
+              <Clock size={10} /> {formatCountdown(countdown.text)}
             </span>
           )}
         </div>
       </div>
-      <CopyCodeButton code={offer.code} color={offer.color} />
+      <CopyCodeButton code={offer.code} color={offer.color} t={t} />
     </div>
   );
 }
@@ -321,6 +399,7 @@ function CouponCard({ offer }) {
    MAIN COMPONENT
    ══════════════════════════════════════ */
 export default function OffersPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -363,7 +442,7 @@ export default function OffersPage() {
       {/* ── Back Button ── */}
       <button className="offers-back-btn" onClick={() => navigate(-1)}>
         <ArrowLeft size={20} />
-        <span>Back</span>
+        <span>{t('common.back', 'Back')}</span>
       </button>
 
       {/* ── Page Header ── */}
@@ -373,9 +452,9 @@ export default function OffersPage() {
             <Tag size={24} strokeWidth={1.8} />
           </div>
           <div>
-            <h1>Deals & Offers</h1>
+            <h1>{t('offers.title', 'Deals & Offers')}</h1>
             <p className="offers-page-subtitle">
-              {OFFERS.length} active offers — grab them before they expire!
+              {t('offers.subtitle', '{{count}} active offers — grab them before they expire!', { count: OFFERS.length })}
             </p>
           </div>
         </div>
@@ -389,12 +468,13 @@ export default function OffersPage() {
             offer={offer}
             isActive={activeOfferId === offer.id}
             onClick={() => setActiveOfferId(offer.id)}
+            t={t}
           />
         ))}
       </div>
 
       {/* ── Active Offer Hero ── */}
-      <OfferHero offer={activeOffer} />
+      <OfferHero offer={activeOffer} t={t} />
 
       {/* ── Products Grid ── */}
       <div className="offers-products-section">
@@ -402,10 +482,12 @@ export default function OffersPage() {
           <div>
             <span className="offers-products-label">
               <Flame size={14} />
-              {activeOffer.title}
+              {t(activeOffer.titleKey, activeOffer.titleDefault)}
             </span>
             <h2>
-              {filteredProducts.length} Product{filteredProducts.length !== 1 ? 's' : ''} on Sale
+              {t('offers.products.count', '{{count}} Product{{count, plural, one {} other {s}}} on Sale', { 
+                count: filteredProducts.length 
+              })}
             </h2>
           </div>
           {activeOffer.categories.length > 0 && (
@@ -417,7 +499,7 @@ export default function OffersPage() {
                   className="offers-cat-chip"
                   style={{ '--offer-color': activeOffer.color }}
                 >
-                  {cat}
+                  {tc(cat, t)}
                   <ChevronRight size={12} />
                 </Link>
               ))}
@@ -443,10 +525,10 @@ export default function OffersPage() {
         ) : filteredProducts.length === 0 ? (
           <div className="offers-empty">
             <ShoppingBag size={48} strokeWidth={1.2} />
-            <h3>No products found for this offer</h3>
-            <p>Check back soon — new deals are added regularly!</p>
+            <h3>{t('offers.empty.title', 'No products found for this offer')}</h3>
+            <p>{t('offers.empty.subtitle', 'Check back soon — new deals are added regularly!')}</p>
             <Link to="/products" className="offers-empty-btn">
-              Browse All Products <ArrowRight size={14} />
+              {t('offers.empty.browseAll', 'Browse All Products')} <ArrowRight size={14} />
             </Link>
           </div>
         ) : (
@@ -457,6 +539,7 @@ export default function OffersPage() {
                 product={p}
                 index={i}
                 discountPercent={activeOffer.discountPercent}
+                t={t}
               />
             ))}
           </div>
@@ -467,11 +550,11 @@ export default function OffersPage() {
       <div className="offers-coupons-section">
         <div className="offers-coupons-header">
           <Percent size={16} />
-          <h3>Available Coupon Codes</h3>
+          <h3>{t('offers.coupons.title', 'Available Coupon Codes')}</h3>
         </div>
         <div className="offers-coupons-grid">
           {couponOffers.map(offer => (
-            <CouponCard key={offer.id} offer={offer} />
+            <CouponCard key={offer.id} offer={offer} t={t} />
           ))}
         </div>
       </div>

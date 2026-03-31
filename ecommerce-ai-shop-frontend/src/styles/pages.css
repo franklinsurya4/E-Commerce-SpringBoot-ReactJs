@@ -1058,6 +1058,13 @@
   padding-bottom: 0;
   width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+  scrollbar-width: none; /* Firefox */
+}
+
+.settings-tabs::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 .settings-tab {
@@ -1083,6 +1090,17 @@
 .settings-section { 
   max-width: 640px; 
   width: 100%;
+  padding: 0 8px; /* Add side padding for mobile */
+  box-sizing: border-box;
+}
+
+.settings-section .form-group input,
+.settings-section .form-group select {
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  font-size: 16px; /* Prevents zoom on iOS */
 }
 
 .setting-row {

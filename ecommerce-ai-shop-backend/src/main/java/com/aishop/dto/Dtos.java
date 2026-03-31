@@ -86,7 +86,15 @@ public class Dtos {
         private String name;
         private String description;
         private BigDecimal price;
+
+        // 🔥 Price Drop Fields
         private BigDecimal originalPrice;
+        private LocalDateTime priceDropDate;
+        private LocalDateTime priceDropExpiry;
+        private Boolean isPriceDropped;
+        private Integer discountPercent;    // Computed
+        private BigDecimal savingsAmount;   // Computed
+
         private String imageUrl;
         private List<String> images;
         private String category;
@@ -96,6 +104,8 @@ public class Dtos {
         private int reviewCount;
         private List<String> tags;
         private boolean featured;
+        private boolean active;
+        private LocalDateTime createdAt;
     }
 
     // ========== CART ==========
@@ -243,17 +253,69 @@ public class Dtos {
         private boolean success;
         private String message;
         private T data;
+        private int statusCode;
+
+        // ── Success Responses ──
 
         public static <T> ApiResponse<T> ok(T data) {
-            return ApiResponse.<T>builder().success(true).data(data).build();
+            return ApiResponse.<T>builder()
+                    .success(true).message("Success").data(data).statusCode(200).build();
         }
 
         public static <T> ApiResponse<T> ok(String message, T data) {
-            return ApiResponse.<T>builder().success(true).message(message).data(data).build();
+            return ApiResponse.<T>builder()
+                    .success(true).message(message).data(data).statusCode(200).build();
         }
 
+        public static <T> ApiResponse<T> ok(String message, T data, int statusCode) {
+            return ApiResponse.<T>builder()
+                    .success(true).message(message).data(data).statusCode(statusCode).build();
+        }
+
+        // ── Error Responses ──
+
+        /** Single arg: defaults to 400 Bad Request */
         public static <T> ApiResponse<T> error(String message) {
-            return ApiResponse.<T>builder().success(false).message(message).build();
+            return ApiResponse.<T>builder()
+                    .success(false).message(message).statusCode(400).build();
+        }
+
+        /** Two args: custom status code */
+        public static <T> ApiResponse<T> error(String message, int statusCode) {
+            return ApiResponse.<T>builder()
+                    .success(false).message(message).statusCode(statusCode).build();
+        }
+
+        /** Three args: with error data payload */
+        public static <T> ApiResponse<T> error(String message, int statusCode, T data) {
+            return ApiResponse.<T>builder()
+                    .success(false).message(message).data(data).statusCode(statusCode).build();
+        }
+
+        // ── Convenience Methods ──
+
+        public static <T> ApiResponse<T> badRequest(String message) {
+            return error(message, 400);
+        }
+
+        public static <T> ApiResponse<T> unauthorized(String message) {
+            return error(message, 401);
+        }
+
+        public static <T> ApiResponse<T> forbidden(String message) {
+            return error(message, 403);
+        }
+
+        public static <T> ApiResponse<T> notFound(String message) {
+            return error(message, 404);
+        }
+
+        public static <T> ApiResponse<T> conflict(String message) {
+            return error(message, 409);
+        }
+
+        public static <T> ApiResponse<T> internalError(String message) {
+            return error(message, 500);
         }
     }
 }

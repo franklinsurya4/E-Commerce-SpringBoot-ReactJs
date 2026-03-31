@@ -10,6 +10,7 @@
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
+  "notifications": "Notifications",
     "search": "Search products...",
     "tracking": "Track Order",
     "viewAllResults": "View all results for \"{{query}}\"",
@@ -276,7 +277,7 @@
     "appearance": "Appearance",
     "security": "Security",
     "termsPolicies": "Terms & Policies",
-     "lastUpdated": "Last Updated",
+    "lastUpdated": "Last Updated",
     "policiesDesc": "Review our terms of service, privacy practices, and other policies.",
     "termsOfService": "Terms of Service",
     "termsContent": "Your terms of service content here...",
@@ -457,5 +458,180 @@
     "Beauty": "Beauty",
     "Toys": "Toys",
     "All": "All"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unreadCount": "You have {{count}} unread notification{{count, plural, one {} other {s}}}",
+    "allCaughtUp": "All caught up!",
+    "loading": "Loading notifications...",
+    "types": {
+      "festival": "Festival Offer",
+      "priceDrop": "Price Drop",
+      "priceIncrease": "Price Increase",
+      "flashSale": "Flash Sale",
+      "orderUpdate": "Order Update",
+      "newArrival": "New Arrival",
+      "coupon": "Coupon",
+      "wishlistSale": "Wishlist Sale",
+      "reward": "Reward",
+      "system": "System"
+    },
+    "filters": {
+      "all": "All",
+      "offers": "Offers",
+      "price": "Price Alerts",
+      "orders": "Orders"
+    },
+    "actions": {
+      "markRead": "Mark Read",
+      "markAllRead": "Mark all read",
+      "clearAll": "Clear all",
+      "viewProduct": "View Product",
+      "shopNow": "Shop Now",
+      "viewOrder": "View Order",
+      "viewOffer": "View Offer",
+      "viewDeals": "View Deals",
+      "redeemPoints": "Redeem Points"
+    },
+    "price": {
+      "off": "off",
+      "increase": "increase"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago",
+      "expired": "Expired",
+      "daysHoursLeft": "{{d}}d {{h}}h left",
+      "hoursMinutesLeft": "{{h}}h {{m}}m {{s}}s left"
+    },
+    "date": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "empty": {
+      "title": "No notifications",
+      "all": "You're all caught up! We'll notify you about deals, price changes, and order updates.",
+      "filtered": "No {{filter}} notifications right now.",
+      "viewAll": "View all notifications"
+    },
+    "demo": {
+      "diwali": {
+        "title": "Diwali Mega Sale is LIVE!",
+        "message": "Up to 70% off on Electronics, Fashion & Home. Use code DIWALI70 for extra 10% off. Ends in 48 hours!"
+      },
+      "priceDrop": {
+        "title": "Price dropped on Sony WH-1000XM5",
+        "message": "Good news! The Sony WH-1000XM5 Headphones you viewed dropped from $399.99 to $279.99 — a 30% savings!"
+      },
+      "flash": {
+        "title": "Flash Sale: 4 Hours Left!",
+        "message": "Smartphones starting at $199. Premium brands at unbeatable prices. Limited stock!"
+      },
+      "order": {
+        "title": "Order #QP-20260328 Shipped!",
+        "message": "Your order has been shipped via FedEx. Tracking: FX928374651. Estimated delivery: March 31."
+      },
+      "priceIncrease": {
+        "title": "Samsung Galaxy S25 Ultra price rising",
+        "message": "The Samsung Galaxy S25 Ultra will increase from $1,199.99 to $1,299.99 starting tomorrow. Buy now to lock in the current price!"
+      },
+      "wishlist": {
+        "title": "Your wishlist item is on sale!",
+        "message": "Nike Air Max 90 from your wishlist is now 25% off. Don't miss out — only 3 left in your size!"
+      },
+      "coupon": {
+        "title": "Exclusive coupon just for you!",
+        "message": "Use code LOYAL15 at checkout for 15% off your next purchase. Valid for 7 days."
+      },
+      "newArrival": {
+        "title": "New Arrivals: Spring Collection 2026",
+        "message": "Discover 50+ new styles in our Spring Collection. Fresh fashion, curated for you."
+      },
+      "easter": {
+        "title": "Easter Weekend Special",
+        "message": "Buy 2, Get 1 Free on all Home & Living products this Easter weekend. Auto-applied at checkout!"
+      },
+      "reward": {
+        "title": "You earned 500 QP Points!",
+        "message": "Your recent purchase earned you 500 reward points. You now have 2,350 points — redeem them for discounts!"
+      },
+      "airpods": {
+        "title": "Apple AirPods Pro 2 price cut!",
+        "message": "The AirPods Pro 2 just dropped from $249.99 to $189.99. Lowest price in 3 months."
+      }
+    }
+  },
+  "offers": {
+    "title": "Deals & Offers",
+    "subtitle": "{{count}} active offers — grab them before they expire!",
+    "types": {
+      "festival": "Festival Offer",
+      "flash": "Flash Sale",
+      "coupon": "Exclusive Coupon",
+      "seasonal": "Seasonal"
+    },
+    "badges": {
+      "flash": "Flash Sale",
+      "festival": "Festival Offer",
+      "coupon": "Exclusive Coupon",
+      "seasonal": "Seasonal"
+    },
+    "hero": {
+      "off": "OFF",
+      "endsIn": "Ends in"
+    },
+    "product": {
+      "off": "OFF",
+      "save": "Save",
+      "viewDeal": "View Deal"
+    },
+    "actions": {
+      "copyCode": "Copy code",
+      "copied": "Copied!",
+      "copy": "Copy"
+    },
+    "time": {
+      "expired": "Expired",
+      "daysHours": "{{d}}d {{h}}h {{m}}m",
+      "hoursMinutes": "{{h}}h {{m}}m {{s}}s"
+    },
+    "products": {
+      "count": "{{count}} Product{{count, plural, one {} other {s}}} on Sale"
+    },
+    "empty": {
+      "title": "No products found for this offer",
+      "subtitle": "Check back soon — new deals are added regularly!",
+      "browseAll": "Browse All Products"
+    },
+    "coupons": {
+      "title": "Available Coupon Codes"
+    },
+    "diwali": {
+      "title": "Diwali Mega Sale",
+      "subtitle": "Up to 70% off on Electronics, Fashion & Home",
+      "discount": "Extra 10% Off"
+    },
+    "flash": {
+      "title": "Flash Sale",
+      "subtitle": "Smartphones starting at $199. Limited stock!",
+      "discount": "Up to 50% Off"
+    },
+    "easter": {
+      "title": "Easter Weekend Special",
+      "subtitle": "Buy 2, Get 1 Free on all Home & Living products",
+      "discount": "Buy 2 Get 1 Free"
+    },
+    "newUser": {
+      "title": "New User Exclusive",
+      "subtitle": "Use code LOYAL15 for 15% off your next purchase",
+      "discount": "15% Off"
+    },
+    "spring": {
+      "title": "Spring Collection 2026",
+      "subtitle": "50+ new styles — fresh fashion curated for you",
+      "discount": "20% Off New Arrivals"
+    }
   }
 }

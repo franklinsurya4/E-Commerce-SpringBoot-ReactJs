@@ -21,6 +21,8 @@ import RegisterPage from './pages/RegisterPage';
 import Notificationspage from './pages/Notificationspage';
 import Offerspage from './pages/Offerspage';
 import { WishlistProvider } from './context/Wishlistcontext';
+
+import PriceDropProductPage from './pages/PriceDropProductPage'; 
 import WhishList from './pages/WhishList';
 
 
@@ -46,6 +48,14 @@ function AppContent() {
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
+              <Route 
+              path="/price-drop/:id" 
+              element={
+                <ProtectedRoute>
+                  <PriceDropProductPage />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />

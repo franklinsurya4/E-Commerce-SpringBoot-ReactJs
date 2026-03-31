@@ -27,8 +27,20 @@ public class Product {
     @Positive
     private BigDecimal price;
 
+    // 🔥 Price Drop Fields - with explicit column mapping
+    @Column(name = "original_price")
     private BigDecimal originalPrice;
 
+    @Column(name = "price_drop_date")
+    private LocalDateTime priceDropDate;
+
+    @Column(name = "price_drop_expiry")
+    private LocalDateTime priceDropExpiry;
+
+    @Transient
+    private Boolean isPriceDropped;
+
+    @Column(name = "image_url")
     private String imageUrl;
 
     @ElementCollection
@@ -61,6 +73,47 @@ public class Product {
     @Builder.Default
     private boolean active = true;
 
+    @Column(name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // 🔥 Computed: Is this product currently on a price drop?
+    @PostLoad
+    public void computePriceDropStatus() {
+        if (originalPrice == null || price == null) {
+            this.isPriceDropped = false;
+            return;
+        }
+        if (priceDropExpiry != null && LocalDateTime.now().isAfter(priceDropExpiry)) {
+            this.isPriceDropped = false;
+            return;
+        }
+        this.isPriceDropped = price.compareTo(originalPrice) < 0;
+    }
+
+    @Transient
+    public Integer getDiscountPercent() {
+        if (originalPrice == null || price == null || originalPrice.compareTo(BigDecimal.ZERO) == 0) {
+            return 0;
+        }
+        return originalPrice.subtract(price)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(originalPrice, 0, BigDecimal.ROUND_HALF_UP)
+                .intValue();
+    }
+
+    @Transient
+    public BigDecimal getSavingsAmount() {
+        if (originalPrice == null || price == null) {
+            return BigDecimal.ZERO;
+        }
+        return originalPrice.subtract(price).max(BigDecimal.ZERO);
+    }
+
+    public void touch() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
