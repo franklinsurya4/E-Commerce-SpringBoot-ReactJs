@@ -1,6 +1,6 @@
 # AI Shop — AI-Powered E-Commerce Platform
 
-A full-stack e-commerce application with an embedded AI shopping assistant powered by **Anthropic Claude**, built with **Spring Boot** + **Spring AI** backend and **React** frontend.
+A full-stack e-commerce application with an embedded AI shopping assistant built with **Spring Boot** + **Spring AI** backend and **React** frontend.
 
 ---
 
@@ -51,7 +51,6 @@ A full-stack e-commerce application with an embedded AI shopping assistant power
 | Layer      | Technology                                    |
 |------------|----------------------------------------------|
 | Backend    | Spring Boot 3.3, Spring AI, Spring Security  |
-| AI         | Anthropic Claude (via Spring AI)             |
 | Database   | H2 (dev) / PostgreSQL (prod)                |
 | Auth       | JWT (Bearer token)                           |
 | Email      | Spring Mail + Gmail SMTP                     |
@@ -107,9 +106,6 @@ ai-shop/
 
 ```bash
 cd backend
-
-# Set your Anthropic API key
-export ANTHROPIC_API_KEY=sk-ant-your-key-here
 
 # Run with H2 (no database setup needed)
 ./mvnw spring-boot:run
