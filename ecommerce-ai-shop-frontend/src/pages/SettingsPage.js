@@ -1,11 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { userAPI } from '../api/api';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGear, faFileContract, faShieldHalved, faCookieBite, faEnvelope, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faGear, 
+  faFileContract, 
+  faShieldHalved, 
+  faCookieBite, 
+  faEnvelope, 
+  faCircleInfo,
+  faBell,
+  faCartShopping,
+  faTag,
+  faLock,
+  faFlask
+} from '@fortawesome/free-solid-svg-icons';
 import '../styles/settings-mobile.css';
 
 export default function SettingsPage() {
@@ -17,6 +29,19 @@ export default function SettingsPage() {
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
   const [saving, setSaving] = useState(false);
   const [expandedPolicy, setExpandedPolicy] = useState(null);
+  const [pushPermission, setPushPermission] = useState('default');
+  const [pushSubSettings, setPushSubSettings] = useState({
+    orderUpdates: true,
+    promotions: false,
+    securityAlerts: true
+  });
+
+  // Check push notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      setPushPermission(Notification.permission);
+    }
+  }, []);
 
   const saveProfile = async () => {
     setSaving(true);
@@ -28,13 +53,61 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
-  const toggleSetting = async (key) => {
-    const newVal = !user[key];
+  const toggleSetting = async (key, value = null) => {
+    const newVal = value !== null ? value : !user[key];
     try {
       const res = await userAPI.updateSettings({ [key]: newVal });
       updateUser(res.data.data);
       toast.success(t('settings.settingUpdated'));
     } catch { toast.error(t('settings.failedUpdate')); }
+  };
+
+  const togglePushSubSetting = async (key) => {
+    const newVal = !pushSubSettings[key];
+    setPushSubSettings(prev => ({ ...prev, [key]: newVal }));
+    try {
+      // Save to backend - store as nested object or flattened keys
+      const res = await userAPI.updateSettings({ 
+        pushNotificationPreferences: { ...pushSubSettings, [key]: newVal }
+      });
+      updateUser(res.data.data);
+      toast.success(t('settings.settingUpdated'));
+    } catch { 
+      // Revert on error
+      setPushSubSettings(prev => ({ ...prev, [key]: !newVal }));
+      toast.error(t('settings.failedUpdate')); 
+    }
+  };
+
+  const requestPushPermission = async () => {
+    if (!('Notification' in window)) {
+      toast.error(t('settings.pushNotSupported'));
+      return;
+    }
+    
+    try {
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+      
+      if (permission === 'granted') {
+        toast.success(t('settings.pushEnabled'));
+        // Optionally register for push service here
+      } else if (permission === 'denied') {
+        toast.error(t('settings.pushDenied'));
+      }
+    } catch (err) {
+      console.error('Push permission error:', err);
+      toast.error(t('settings.pushError'));
+    }
+  };
+
+  const sendTestNotification = async () => {
+    try {
+      await userAPI.sendTestPush();
+      toast.success(t('settings.testPushSent'));
+    } catch {
+      toast.error(t('settings.testPushFailed'));
+    }
   };
 
   const changeTheme = async (theme) => {
@@ -168,6 +241,16 @@ If you have any questions about our Refund Policy, please contact us at support@
     { id: 'policies', label: t('settings.termsPolicies') },
   ];
 
+  // Helper component for toggle switch
+  const ToggleSwitch = ({ enabled, onToggle, disabled = false, size = 'default' }) => (
+    <button 
+      className={`toggle ${enabled ? 'active' : ''} ${disabled ? 'disabled' : ''} ${size}`}
+      onClick={onToggle}
+      disabled={disabled}
+      aria-pressed={enabled}
+    />
+  );
+
   return (
     <div className="page-container">
       <h1 className="page-title">
@@ -177,7 +260,13 @@ If you have any questions about our Refund Policy, please contact us at support@
 
       <div className="settings-tabs">
         {tabs.map(tb => (
-          <button key={tb.id} className={`settings-tab ${tab === tb.id ? 'active' : ''}`} onClick={() => setTab(tb.id)}>
+          <button 
+            key={tb.id} 
+            className={`settings-tab ${tab === tb.id ? 'active' : ''}`} 
+            onClick={() => setTab(tb.id)}
+            role="tab"
+            aria-selected={tab === tb.id}
+          >
             {tb.label}
           </button>
         ))}
@@ -188,7 +277,11 @@ If you have any questions about our Refund Policy, please contact us at support@
           <>
             <div className="form-group" style={{ marginBottom: 16 }}>
               <label>{t('settings.fullName')}</label>
-              <input value={profileForm.fullName} onChange={e => setProfileForm({ ...profileForm, fullName: e.target.value })} />
+              <input 
+                value={profileForm.fullName} 
+                onChange={e => setProfileForm({ ...profileForm, fullName: e.target.value })} 
+                placeholder={t('settings.fullNamePlaceholder')}
+              />
             </div>
             <div className="form-group" style={{ marginBottom: 16 }}>
               <label>{t('settings.email')}</label>
@@ -197,7 +290,12 @@ If you have any questions about our Refund Policy, please contact us at support@
             </div>
             <div className="form-group" style={{ marginBottom: 24 }}>
               <label>{t('settings.phone')}</label>
-              <input value={profileForm.phone} onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })} placeholder={t('settings.phonePlaceholder')} />
+              <input 
+                value={profileForm.phone} 
+                onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })} 
+                placeholder={t('settings.phonePlaceholder')} 
+                type="tel"
+              />
             </div>
             <button className="btn btn-primary" onClick={saveProfile} disabled={saving}>
               {saving ? t('settings.saving') : t('settings.saveChanges')}
@@ -207,21 +305,174 @@ If you have any questions about our Refund Policy, please contact us at support@
 
         {tab === 'notifications' && (
           <>
+            {/* Email Notifications */}
             <div className="setting-row">
               <div className="setting-info">
                 <h4>{t('settings.emailNotifications')}</h4>
                 <p>{t('settings.emailNotificationsDesc')}</p>
               </div>
-              <button className={`toggle ${user?.emailNotifications ? 'active' : ''}`}
-                onClick={() => toggleSetting('emailNotifications')} />
+              <ToggleSwitch 
+                enabled={user?.emailNotifications} 
+                onToggle={() => toggleSetting('emailNotifications')} 
+              />
             </div>
-            <div className="setting-row">
-              <div className="setting-info">
-                <h4>{t('settings.pushNotifications')}</h4>
-                <p>{t('settings.pushNotificationsDesc')}</p>
+
+            {/* Push Notifications Header */}
+            <div style={{ 
+              padding: '16px 0', 
+              borderBottom: '1px solid var(--border-color)',
+              marginBottom: 16
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <FontAwesomeIcon icon={faBell} style={{ color: 'var(--accent-color, #7c3aed)' }} />
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600 }}>
+                  {t('settings.pushNotifications')}
+                </h3>
               </div>
-              <button className={`toggle ${user?.pushNotifications ? 'active' : ''}`}
-                onClick={() => toggleSetting('pushNotifications')} />
+              <p style={{ margin: '4px 0 12px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                {t('settings.pushNotificationsDesc')}
+              </p>
+              
+              {/* Permission Status */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8, 
+                marginBottom: 12,
+                flexWrap: 'wrap'
+              }}>
+                <span style={{ 
+                  fontSize: '0.85rem',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: pushPermission === 'granted' ? 'rgba(34,197,94,0.15)' : 
+                             pushPermission === 'denied' ? 'rgba(239,68,68,0.15)' : 
+                             'rgba(107,114,128,0.15)',
+                  color: pushPermission === 'granted' ? '#22c55e' : 
+                         pushPermission === 'denied' ? '#ef4444' : 
+                         '#6b7280',
+                  fontWeight: 500
+                }}>
+                  {pushPermission === 'granted' ? t('settings.pushAllowed') : 
+                   pushPermission === 'denied' ? t('settings.pushBlocked') : 
+                   t('settings.pushDefault')}
+                </span>
+                
+                {pushPermission !== 'granted' && (
+                  <button 
+                    className="btn btn-sm btn-secondary"
+                    onClick={requestPushPermission}
+                    style={{ padding: '4px 12px', fontSize: '0.8rem' }}
+                  >
+                    {t('settings.enablePush')}
+                  </button>
+                )}
+              </div>
+
+              {/* Main Push Toggle */}
+              {pushPermission === 'granted' && (
+                <div className="setting-row" style={{ alignItems: 'center' }}>
+                  <div className="setting-info" style={{ flex: 1 }}>
+                    <strong style={{ fontSize: '0.95rem' }}>{t('settings.receivePush')}</strong>
+                  </div>
+                  <ToggleSwitch 
+                    enabled={user?.pushNotifications} 
+                    onToggle={() => toggleSetting('pushNotifications')} 
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Push Notification Sub-settings (only show if push is enabled and permission granted) */}
+            {pushPermission === 'granted' && user?.pushNotifications && (
+              <div style={{ 
+                paddingLeft: 12, 
+                borderLeft: '2px solid var(--border-color)',
+                marginBottom: 20
+              }}>
+                <p style={{ 
+                  fontSize: '0.85rem', 
+                  color: 'var(--text-muted)', 
+                  marginBottom: 12,
+                  fontStyle: 'italic'
+                }}>
+                  {t('settings.customizePushTypes')}
+                </p>
+                
+                {/* Order Updates */}
+                <div className="setting-row" style={{ padding: '8px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <FontAwesomeIcon icon={faCartShopping} style={{ color: '#3b82f6', width: 16 }} />
+                    <div>
+                      <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{t('settings.orderUpdates')}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.orderUpdatesDesc')}</div>
+                    </div>
+                  </div>
+                  <ToggleSwitch 
+                    enabled={pushSubSettings.orderUpdates} 
+                    onToggle={() => togglePushSubSetting('orderUpdates')}
+                    size="small"
+                  />
+                </div>
+
+                {/* Promotions */}
+                <div className="setting-row" style={{ padding: '8px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <FontAwesomeIcon icon={faTag} style={{ color: '#f59e0b', width: 16 }} />
+                    <div>
+                      <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{t('settings.promotions')}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.promotionsDesc')}</div>
+                    </div>
+                  </div>
+                  <ToggleSwitch 
+                    enabled={pushSubSettings.promotions} 
+                    onToggle={() => togglePushSubSetting('promotions')}
+                    size="small"
+                  />
+                </div>
+
+                {/* Security Alerts */}
+                <div className="setting-row" style={{ padding: '8px 0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <FontAwesomeIcon icon={faLock} style={{ color: '#ef4444', width: 16 }} />
+                    <div>
+                      <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{t('settings.securityAlerts')}</div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t('settings.securityAlertsDesc')}</div>
+                    </div>
+                  </div>
+                  <ToggleSwitch 
+                    enabled={pushSubSettings.securityAlerts} 
+                    onToggle={() => togglePushSubSetting('securityAlerts')}
+                    size="small"
+                  />
+                </div>
+
+                {/* Test Notification Button */}
+                <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px dashed var(--border-color)' }}>
+                  <button 
+                    className="btn btn-sm btn-secondary"
+                    onClick={sendTestNotification}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <FontAwesomeIcon icon={faFlask} />
+                    {t('settings.testPushNotification')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Helper text for push notifications */}
+            <div style={{ 
+              marginTop: 8, 
+              padding: '12px', 
+              background: 'var(--bg-secondary, rgba(124,58,237,0.06))', 
+              borderRadius: 8,
+              fontSize: '0.82rem',
+              color: 'var(--text-muted)',
+              lineHeight: 1.5
+            }}>
+              <FontAwesomeIcon icon={faCircleInfo} style={{ marginRight: 6, color: 'var(--accent-color, #7c3aed)' }} />
+              {t('settings.pushHelpText')}
             </div>
           </>
         )}
@@ -235,8 +486,11 @@ If you have any questions about our Refund Policy, please contact us at support@
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {['dark', 'light', 'system'].map(thm => (
-                  <button key={thm} className={`btn btn-sm ${currentTheme === thm ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => changeTheme(thm)}>
+                  <button 
+                    key={thm} 
+                    className={`btn btn-sm ${currentTheme === thm ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => changeTheme(thm)}
+                  >
                     {t(`settings.${thm}`)}
                   </button>
                 ))}
@@ -249,7 +503,7 @@ If you have any questions about our Refund Policy, please contact us at support@
               </div>
               <select
                 value={i18n.language}
-                style={{ width: 'auto', padding: '8px 16px' }}
+                style={{ width: 'auto', padding: '8px 16px', borderRadius: '6px' }}
                 onChange={(e) => changeLanguage(e.target.value)}
               >
                 <option value="en">English</option>
@@ -267,18 +521,30 @@ If you have any questions about our Refund Policy, please contact us at support@
             <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 16 }}>{t('settings.changePassword')}</h3>
             <div className="form-group" style={{ marginBottom: 16 }}>
               <label>{t('settings.currentPassword')}</label>
-              <input type="password" value={pwForm.currentPassword}
-                onChange={e => setPwForm({ ...pwForm, currentPassword: e.target.value })} />
+              <input 
+                type="password" 
+                value={pwForm.currentPassword}
+                onChange={e => setPwForm({ ...pwForm, currentPassword: e.target.value })} 
+                placeholder="••••••••"
+              />
             </div>
             <div className="form-group" style={{ marginBottom: 16 }}>
               <label>{t('settings.newPassword')}</label>
-              <input type="password" value={pwForm.newPassword}
-                onChange={e => setPwForm({ ...pwForm, newPassword: e.target.value })} />
+              <input 
+                type="password" 
+                value={pwForm.newPassword}
+                onChange={e => setPwForm({ ...pwForm, newPassword: e.target.value })}
+                placeholder={t('settings.newPasswordPlaceholder')}
+              />
             </div>
             <div className="form-group" style={{ marginBottom: 24 }}>
               <label>{t('settings.confirmPassword')}</label>
-              <input type="password" value={pwForm.confirm}
-                onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })} />
+              <input 
+                type="password" 
+                value={pwForm.confirm}
+                onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })}
+                placeholder={t('settings.confirmPasswordPlaceholder')}
+              />
             </div>
             <button className="btn btn-primary" onClick={changePassword} disabled={saving}>
               {saving ? t('settings.changingPassword') : t('settings.changePassword')}
@@ -316,6 +582,7 @@ If you have any questions about our Refund Policy, please contact us at support@
                     color: 'var(--text-primary)',
                     textAlign: 'left',
                   }}
+                  aria-expanded={expandedPolicy === policy.id}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <FontAwesomeIcon icon={policy.icon} style={{ fontSize: '1.1rem', color: 'var(--accent-color, #7c3aed)', width: 20 }} />
