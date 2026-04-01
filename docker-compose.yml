@@ -4,9 +4,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: aishopdb
+      POSTGRES_DB: AI_E-Commerce
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-root}
     ports:
       - "5432:5432"
     volumes:
@@ -22,25 +22,50 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aishopdb
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/AI_E-Commerce
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres123}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      
+      # Ollama AI (replaces Anthropic)
+      APP_OLLAMA_ENABLED: ${OLLAMA_ENABLED:-true}
+      APP_OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      APP_OLLAMA_MODEL: ${OLLAMA_MODEL:-phi3}
+      APP_OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-30000}
+      
+      # Security
       JWT_SECRET: ${JWT_SECRET:-a3f8b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1}
-      MAIL_USERNAME: ${MAIL_USERNAME:-}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      
+      # Email (Gmail SMTP)
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD}
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: true
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: true
+      
+      # CORS & Frontend
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:3000}
+      
+      # Spring Profiles
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
     depends_on:
       postgres:
         condition: service_healthy
+    extra_hosts:
+      # Allows backend container to reach Ollama running on your host machine
+      - "host.docker.internal:host-gateway"
 
   frontend:
     build: ./frontend
     ports:
       - "80:80"
+    environment:
+      # Pass API URL to React app at build time
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080}
     depends_on:
       - backend
 
