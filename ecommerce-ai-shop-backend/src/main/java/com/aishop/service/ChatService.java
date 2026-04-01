@@ -21,10 +21,16 @@ public class ChatService {
     private final ProductRepository productRepository;
     private final ProductService productService;
 
-    @Value("${app.gemini.api-key:}")
-    private String geminiApiKey;
+    @Value("${app.ollama.base-url:http://localhost:11434}")
+    private String ollamaBaseUrl;
 
-    private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    @Value("${app.ollama.model:phi3}")
+    private String ollamaModel;
+
+    @Value("${app.ollama.timeout:30000}")
+    private int ollamaTimeout;
+
+    private static final String OLLAMA_CHAT_ENDPOINT = "/api/chat";
 
     private static final String SYSTEM_PROMPT = """
         You are ShopAI, the intelligent shopping assistant for AI Shop — a premium e-commerce platform.
@@ -54,74 +60,70 @@ public class ChatService {
 
     public ChatResponse chat(ChatRequest request) {
         try {
-            if (geminiApiKey == null || geminiApiKey.isBlank()) {
-                return ChatResponse.builder()
-                        .reply("AI assistant is not configured yet. Please add a Gemini API key.")
-                        .suggestedProducts(Collections.emptyList())
-                        .build();
-            }
-
             String productCatalog = getProductCatalog();
-            List<Map<String, Object>> contents = new ArrayList<>();
-            String systemContext = SYSTEM_PROMPT + "\n\nAVAILABLE PRODUCTS:\n" + productCatalog;
 
+            // Build messages array for Ollama
+            List<Map<String, String>> messages = new ArrayList<>();
+
+            // Add system prompt with product catalog
+            messages.add(Map.of("role", "system", "content", SYSTEM_PROMPT + "\n\nAVAILABLE PRODUCTS:\n" + productCatalog));
+
+            // Add conversation history
             if (request.getHistory() != null) {
                 for (ChatMessage msg : request.getHistory()) {
-                    Map<String, Object> content = new HashMap<>();
-                    content.put("role", "user".equals(msg.getRole()) ? "user" : "model");
-                    content.put("parts", List.of(Map.of("text", msg.getContent())));
-                    contents.add(content);
+                    messages.add(Map.of(
+                            "role", "user".equals(msg.getRole()) ? "user" : "assistant",
+                            "content", msg.getContent()
+                    ));
                 }
             }
 
-            String userMessage = request.getMessage();
-            if (contents.isEmpty()) {
-                userMessage = systemContext + "\n\nUser question: " + request.getMessage();
-            }
+            // Add current user message
+            messages.add(Map.of("role", "user", "content", request.getMessage()));
 
-            Map<String, Object> userContent = new HashMap<>();
-            userContent.put("role", "user");
-            userContent.put("parts", List.of(Map.of("text", userMessage)));
-            contents.add(userContent);
-
+            // Build Ollama request body
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("contents", contents);
-            requestBody.put("generationConfig", Map.of(
+            requestBody.put("model", ollamaModel);
+            requestBody.put("messages", messages);
+            requestBody.put("stream", false);
+            requestBody.put("options", Map.of(
                     "temperature", 0.7,
-                    "maxOutputTokens", 1024
+                    "num_predict", 1024
             ));
 
             RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+            restTemplate.getInterceptors().add((req, body, execution) -> {
+                HttpHeaders headers = req.getHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+                return execution.execute(req, body);
+            });
 
-            String url = GEMINI_URL + "?key=" + geminiApiKey;
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            String url = ollamaBaseUrl + OLLAMA_CHAT_ENDPOINT;
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody);
 
-            log.debug("Calling Gemini API: {}", GEMINI_URL);
+            log.debug("Calling Ollama API: {} with model: {}", url, ollamaModel);
+
             ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
 
-            if (response.getBody() == null) {
+            if (response.getBody() == null || !response.getStatusCode().is2xxSuccessful()) {
+                log.error("Ollama API error: {}", response.getStatusCode());
                 return ChatResponse.builder()
-                        .reply("No response from AI. Please try again!")
+                        .reply("I'm having trouble connecting to the AI assistant. Please try again!")
                         .suggestedProducts(Collections.emptyList())
                         .build();
             }
 
-            String reply = extractGeminiResponse(response.getBody());
+            String reply = extractOllamaResponse(response.getBody());
             List<ProductDto> suggested = findMentionedProducts(request.getMessage(), reply);
 
-            return ChatResponse.builder().reply(reply).suggestedProducts(suggested).build();
+            return ChatResponse.builder()
+                    .reply(reply)
+                    .suggestedProducts(suggested)
+                    .build();
 
         } catch (Exception e) {
-            log.error("Chat error: {}", e.getMessage());
-
-            String errorMsg = e.getMessage();
-            if (errorMsg != null && errorMsg.contains("404")) {
-                log.error("Gemini model not found. Trying fallback...");
-                return tryFallbackModel(request);
-            }
-
+            log.error("Chat error: {}", e.getMessage(), e);
             return ChatResponse.builder()
                     .reply("I'm having trouble connecting right now. Please try again in a moment, or browse our products directly!")
                     .suggestedProducts(Collections.emptyList())
@@ -129,74 +131,36 @@ public class ChatService {
         }
     }
 
-    private ChatResponse tryFallbackModel(ChatRequest request) {
-        String[] fallbackUrls = {
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent",
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent"
-        };
-
-        for (String fallbackUrl : fallbackUrls) {
-            try {
-                log.debug("Trying fallback Gemini URL: {}", fallbackUrl);
-
-                String userMessage = SYSTEM_PROMPT + "\n\nUser question: " + request.getMessage();
-
-                Map<String, Object> userContent = new HashMap<>();
-                userContent.put("role", "user");
-                userContent.put("parts", List.of(Map.of("text", userMessage)));
-
-                Map<String, Object> requestBody = new HashMap<>();
-                requestBody.put("contents", List.of(userContent));
-                requestBody.put("generationConfig", Map.of(
-                        "temperature", 0.7,
-                        "maxOutputTokens", 1024
-                ));
-
-                RestTemplate restTemplate = new RestTemplate();
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-
-                String url = fallbackUrl + "?key=" + geminiApiKey;
-                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
-                ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
-                String reply = extractGeminiResponse(response.getBody());
-
-                log.info("Fallback model worked: {}", fallbackUrl);
-                List<ProductDto> suggested = findMentionedProducts(request.getMessage(), reply);
-                return ChatResponse.builder().reply(reply).suggestedProducts(suggested).build();
-
-            } catch (Exception ex) {
-                log.debug("Fallback failed for {}: {}", fallbackUrl, ex.getMessage());
-            }
-        }
-
-        return ChatResponse.builder()
-                .reply("I'm having trouble connecting right now. Please try again in a moment, or browse our products directly!")
-                .suggestedProducts(Collections.emptyList())
-                .build();
-    }
-
     @SuppressWarnings("unchecked")
-    private String extractGeminiResponse(Map body) {
+    private String extractOllamaResponse(Map body) {
         try {
-            List<Map> candidates = (List<Map>) body.get("candidates");
-            Map candidate = candidates.get(0);
-            Map content = (Map) candidate.get("content");
-            List<Map> parts = (List<Map>) content.get("parts");
-            return (String) parts.get(0).get("text");
+            // Ollama /api/chat response format
+            Map message = (Map) body.get("message");
+            if (message != null) {
+                return (String) message.get("content");
+            }
+            // Fallback for /api/generate format
+            return (String) body.get("response");
         } catch (Exception e) {
-            log.error("Failed to parse Gemini response: {}", e.getMessage());
+            log.error("Failed to parse Ollama response: {}", e.getMessage());
             return "Sorry, I couldn't process that. Please try again!";
         }
     }
 
     private String getProductCatalog() {
         List<Product> products = productRepository.findByActiveTrue();
+        if (products.isEmpty()) {
+            return "No products currently available.";
+        }
+
         StringBuilder sb = new StringBuilder();
+        int count = 0;
         for (Product p : products) {
+            if (count >= 50) break; // Limit context size for Phi3
             sb.append("ID:%d | %s | $%.2f | Category:%s | Brand:%s | Stock:%d | Rating:%.1f\n"
-                    .formatted(p.getId(), p.getName(), p.getPrice(), p.getCategory(), p.getBrand(), p.getStock(), p.getRating()));
+                    .formatted(p.getId(), p.getName(), p.getPrice(),
+                            p.getCategory(), p.getBrand(), p.getStock(), p.getRating()));
+            count++;
         }
         return sb.toString();
     }

@@ -924,6 +924,99 @@
   text-decoration: line-through;
 }
 
+/* Existing CSS ... */
+
+.hp-newsletter-form {
+  display: flex;
+  gap: 10px;
+  max-width: 500px;
+  margin: 2rem auto 0;
+  position: relative;
+  z-index: 2;
+}
+
+.hp-newsletter-form input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.3s;
+}
+
+.hp-newsletter-form input:focus {
+  border-color: var(--hp-primary);
+  background: rgba(255,255,255,0.15);
+}
+
+.hp-newsletter-form input.input-error {
+  border-color: var(--hp-error);
+  animation: shake 0.4s ease-in-out;
+}
+
+.hp-newsletter-form button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.hp-newsletter-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Feedback Message Styles */
+.hp-newsletter-feedback {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.hp-newsletter-feedback.success {
+  color: var(--hp-success);
+}
+
+.hp-newsletter-feedback.error {
+  color: var(--hp-error);
+}
+
+/* Simple Spinner for Loading */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ══════════════════════════════════════
    NEWSLETTER
    ══════════════════════════════════════ */
@@ -1004,6 +1097,80 @@
 
 .hp-newsletter-form input:focus {
   border-color: var(--hp-gold);
+}
+
+/* Newsletter Form States */
+.hp-newsletter-form input.input-error {
+  border-color: var(--hp-error, #ef4444);
+  animation: shake 0.4s ease-in-out;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.hp-newsletter-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.hp-newsletter-form button .spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+/* Feedback Message */
+.hp-newsletter-feedback {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+}
+
+.hp-newsletter-feedback.success {
+  color: var(--hp-success, #22c55e);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.hp-newsletter-feedback.error {
+  color: var(--hp-error, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Accessibility: Focus states */
+.hp-newsletter-form input:focus {
+  outline: 2px solid var(--hp-primary, #6366f1);
+  outline-offset: 2px;
+}
+
+.hp-newsletter-form button:focus-visible {
+  outline: 2px solid var(--hp-primary, #6366f1);
+  outline-offset: 2px;
 }
 
 /* ══════════════════════════════════════

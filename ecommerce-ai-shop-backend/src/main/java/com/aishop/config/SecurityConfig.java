@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
                         .requestMatchers("/api/chat/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/orders/track/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/notifications/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         // Admin endpoints — require ADMIN role
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

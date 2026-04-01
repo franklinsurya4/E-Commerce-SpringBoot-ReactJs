@@ -120,21 +120,11 @@ export const userAPI = {
 
 // ==================== 🔔 PUSH NOTIFICATIONS API ====================
 export const notificationAPI = {
-  /**
-   * Get VAPID public key for browser push subscription
-   * @returns {Promise<string>} The base64url-encoded public key
-   */
   getVapidPublicKey: async () => {
     const res = await api.get('/notifications/vapid-public-key');
     return res.data.publicKey;
   },
   
-  /**
-   * Save browser push subscription to backend
-   * @param {PushSubscription} subscription - Browser PushSubscription object
-   * @param {Object} metadata - Optional device info
-   * @returns {Promise<void>}
-   */
   saveSubscription: async (subscription, metadata = {}) => {
     const payload = {
       endpoint: subscription.endpoint,
@@ -148,40 +138,21 @@ export const notificationAPI = {
     await api.post('/notifications/subscribe', payload);
   },
   
-  /**
-   * Delete push subscription(s) for current user
-   * @param {string|null} endpoint - Specific endpoint to remove, or null for all
-   * @returns {Promise<void>}
-   */
   deleteSubscription: async (endpoint = null) => {
     const params = endpoint ? { endpoint } : {};
     await api.delete('/notifications/unsubscribe', { params });
   },
   
-  /**
-   * Send test push notification to current user
-   * @returns {Promise<{message: string}>}
-   */
   sendTestPush: async () => {
     const res = await api.post('/notifications/test');
     return res.data;
   },
   
-  /**
-   * Get all active push subscriptions for current user (device management)
-   * @returns {Promise<Array<{id: number, endpointMasked: string, deviceInfo: string, platform: string, createdAt: string, lastUsedAt: string, active: boolean}>>}
-   */
   getSubscriptions: async () => {
     const res = await api.get('/notifications/subscriptions');
     return res.data;
   },
   
-  /**
-   * Update a specific subscription (e.g., mark as inactive)
-   * @param {number} subscriptionId 
-   * @param {Object} updates - Fields to update (e.g., { active: false })
-   * @returns {Promise<{message: string, id: number}>}
-   */
   updateSubscription: async (subscriptionId, updates) => {
     const res = await api.patch(`/notifications/subscriptions/${subscriptionId}`, updates);
     return res.data;
@@ -190,11 +161,6 @@ export const notificationAPI = {
 
 // ==================== 🔔 PUSH UTILITIES ====================
 export const pushUtils = {
-  /**
-   * Convert URL-safe base64 string to Uint8Array (for VAPID key)
-   * @param {string} base64String 
-   * @returns {Uint8Array}
-   */
   urlBase64ToUint8Array: (base64String) => {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
     const base64 = (base64String + padding)
@@ -208,52 +174,29 @@ export const pushUtils = {
     return outputArray;
   },
   
-  /**
-   * Check if browser supports push notifications
-   * @returns {boolean}
-   */
   isSupported: () => 
     'serviceWorker' in navigator && 
     'PushManager' in window && 
     'Notification' in window,
   
-  /**
-   * Get current notification permission status
-   * @returns {'granted'|'denied'|'default'}
-   */
   getPermission: () => 
     'Notification' in window ? Notification.permission : 'denied',
   
-  /**
-   * Request notification permission from user
-   * @returns {Promise<'granted'|'denied'|'default'>}
-   */
   requestPermission: async () => {
     if (!('Notification' in window)) return 'denied';
     return Notification.requestPermission();
   },
   
-  /**
-   * Register service worker for push notifications
-   * @param {string} swPath - Path to service worker file
-   * @returns {Promise<ServiceWorkerRegistration>}
-   */
   registerServiceWorker: async (swPath = '/firebase-messaging-sw.js') => {
     if (!('serviceWorker' in navigator)) {
       throw new Error('Service Worker not supported');
     }
     return navigator.serviceWorker.register(swPath, { 
       scope: '/',
-      updateViaCache: 'none' // Always fetch latest SW
+      updateViaCache: 'none'
     });
   },
   
-  /**
-   * Subscribe to push notifications
-   * @param {string} vapidPublicKey - VAPID public key from backend
-   * @param {ServiceWorkerRegistration} registration - SW registration
-   * @returns {Promise<PushSubscription>}
-   */
   subscribeToPush: async (vapidPublicKey, registration) => {
     return registration.pushManager.subscribe({
       userVisibleOnly: true,
@@ -261,20 +204,11 @@ export const pushUtils = {
     });
   },
   
-  /**
-   * Complete flow: Enable push notifications end-to-end
-   * @param {Object} options
-   * @param {string} options.swPath - Service worker path
-   * @param {Function} options.onPermissionChange - Callback when permission changes
-   * @returns {Promise<{success: boolean, subscription?: PushSubscription, message?: string}>}
-   */
   enablePush: async ({ swPath = '/firebase-messaging-sw.js', onPermissionChange } = {}) => {
-    // 1. Check support
     if (!pushUtils.isSupported()) {
       return { success: false, message: 'Push notifications not supported in this browser' };
     }
     
-    // 2. Request permission
     const permission = await pushUtils.requestPermission();
     if (onPermissionChange) onPermissionChange(permission);
     
@@ -287,16 +221,9 @@ export const pushUtils = {
       };
     }
     
-    // 3. Register service worker
     const registration = await pushUtils.registerServiceWorker(swPath);
-    
-    // 4. Get VAPID key from backend
     const vapidPublicKey = await notificationAPI.getVapidPublicKey();
-    
-    // 5. Subscribe to push
     const subscription = await pushUtils.subscribeToPush(vapidPublicKey, registration);
-    
-    // 6. Save to backend
     await notificationAPI.saveSubscription(subscription, {
       userAgent: navigator.userAgent,
     });
@@ -304,17 +231,10 @@ export const pushUtils = {
     return { success: true, subscription, message: 'Push notifications enabled!' };
   },
   
-  /**
-   * Disable push notifications for current user
-   * @param {string|null} endpoint - Optional specific endpoint
-   * @returns {Promise<{success: boolean, message: string}>}
-   */
   disablePush: async (endpoint = null) => {
     try {
-      // 1. Remove from backend
       await notificationAPI.deleteSubscription(endpoint);
       
-      // 2. Unsubscribe from browser (if endpoint provided)
       if (endpoint && 'serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.getSubscription();
@@ -330,11 +250,6 @@ export const pushUtils = {
     }
   },
   
-  /**
-   * Listen for push messages while app is open (foreground)
-   * @param {Function} onMessage - Callback when push received: (data) => void
-   * @returns {Function} cleanup - Call to remove listener
-   */
   onForegroundMessage: (onMessage) => {
     if (!('serviceWorker' in navigator)) return () => {};
     
@@ -355,6 +270,30 @@ export const pushUtils = {
   },
 };
 
+// ==================== 📧 NEWSLETTER API ====================
+export const newsletterAPI = {
+  /**
+   * Subscribe an email to the newsletter
+   * @param {string} email - User's email address
+   * @returns {Promise<{message: string}>} Success response
+   */
+  subscribe: (email) => api.post('/newsletter/subscribe', { email }),
+  
+  /**
+   * Unsubscribe an email from the newsletter
+   * @param {string} email - User's email address
+   * @returns {Promise<{message: string}>} Success response
+   */
+  unsubscribe: (email) => api.post('/newsletter/unsubscribe', { email }),
+  
+  /**
+   * Check if an email is already subscribed
+   * @param {string} email - Email to check
+   * @returns {Promise<{subscribed: boolean}>}
+   */
+  checkStatus: (email) => api.get('/newsletter/status', { params: { email } }),
+};
+
 // ==================== REVIEWS API ====================
 export const reviewAPI = {
   getForProduct: (productId, params = {}) => 
@@ -367,7 +306,13 @@ export const reviewAPI = {
 
 // ==================== CHAT API ====================
 export const chatAPI = {
-  send: (message) => api.post('/chat', { message }),
+  send: (payload) => {
+    const data = {
+      message: payload.message || payload,
+      history: payload.history || []
+    };
+    return api.post('/chat', data);
+  },
   getHistory: (params = {}) => api.get('/chat/history', { params }),
   markAsRead: (conversationId) => api.patch(`/chat/${conversationId}/read`),
 };

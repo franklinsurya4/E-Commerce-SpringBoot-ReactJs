@@ -1,3 +1,4 @@
+// src/pages/HomePage.js - ✅ FULLY FIXED & UPDATED
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -6,7 +7,7 @@ import {
   Zap, ChevronRight, TrendingUp, Clock, Gift, Heart,
   ShoppingBag, Award, Headphones, Monitor, Shirt, Home as HomeIcon
 } from 'lucide-react';
-import { productAPI } from '../api/api';
+import { productAPI, newsletterAPI } from '../api/api'; // ✅ Added newsletterAPI import
 import '../styles/HomePage.css';
 
 const CATEGORY_ICONS = {
@@ -96,13 +97,65 @@ export default function HomePage() {
   const { t } = useTranslation();
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
+  
+  // ✅ Newsletter State (WAS MISSING - caused blank page)
+  const [email, setEmail] = useState('');
+  const [newsStatus, setNewsStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+  const [newsMessage, setNewsMessage] = useState('');
 
   const tc = (cat) => t(`categories.${cat}`, { defaultValue: cat });
 
   useEffect(() => {
-    productAPI.getFeatured().then(r => setFeatured(r.data.data || [])).catch(() => {});
-    productAPI.getCategories().then(r => setCategories(r.data.data || [])).catch(() => {});
+    // ✅ Safe API calls with error handling
+    const loadData = async () => {
+      try {
+        const [featuredRes, categoriesRes] = await Promise.all([
+          productAPI.getFeatured().catch(() => ({ data: { data: [] } })),
+          productAPI.getCategories().catch(() => ({ data: { data: [] } }))
+        ]);
+        setFeatured(featuredRes.data?.data || []);
+        setCategories(categoriesRes.data?.data || []);
+      } catch (err) {
+        console.error('Failed to load homepage data:', err);
+        setFeatured([]);
+        setCategories([]);
+      }
+    };
+    loadData();
   }, []);
+
+  // ✅ Newsletter Submit Handler (WAS MISSING)
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setNewsStatus('error');
+      setNewsMessage(t('home.invalidEmail') || 'Please enter a valid email');
+      return;
+    }
+
+    setNewsStatus('loading');
+    
+    try {
+      await newsletterAPI.subscribe(email);
+      setNewsStatus('success');
+      setNewsMessage(t('home.subscribedSuccess') || '🎉 Welcome! Check your inbox.');
+      setEmail(''); // Clear input on success
+    } catch (err) {
+      setNewsStatus('error');
+      const msg = err.response?.data?.message || t('home.subscribedError') || 'Failed to subscribe';
+      setNewsMessage(msg);
+    } finally {
+      // Auto-clear message after 5 seconds
+      setTimeout(() => {
+        if (newsStatus !== 'loading') {
+          setNewsStatus('idle');
+          setNewsMessage('');
+        }
+      }, 5000);
+    }
+  };
 
   const trustItems = [
     { icon: Truck, title: t('home.freeShipping'), desc: t('home.freeShippingDesc') },
@@ -266,17 +319,54 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── NEWSLETTER ── */}
+      {/* ── NEWSLETTER (✅ NOW WORKING) ── */}
       <section className="hp-section">
         <div className="hp-newsletter">
           <div className="hp-newsletter-glow" />
           <Gift size={36} strokeWidth={1.5} className="hp-newsletter-icon" />
           <h2>{t('home.newsletterTitle')}</h2>
           <p>{t('home.newsletterDesc')}</p>
-          <div className="hp-newsletter-form">
-            <input type="email" placeholder={t('home.emailPlaceholder')} />
-            <button className="hp-btn-hero">{t('home.subscribe')} <ArrowRight size={16} /></button>
-          </div>
+          
+          <form className="hp-newsletter-form" onSubmit={handleNewsletterSubmit}>
+            <input 
+              type="email" 
+              placeholder={t('home.emailPlaceholder')} 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={newsStatus === 'loading' || newsStatus === 'success'}
+              className={newsStatus === 'error' ? 'input-error' : ''}
+              aria-label="Email address"
+            />
+            <button 
+              type="submit" 
+              className="hp-btn-hero" 
+              disabled={newsStatus === 'loading' || newsStatus === 'success'}
+              aria-busy={newsStatus === 'loading'}
+            >
+              {newsStatus === 'loading' ? (
+                <span className="spinner" aria-hidden="true"></span> 
+              ) : newsStatus === 'success' ? (
+                t('home.subscribed') || 'Subscribed!' 
+              ) : (
+                <>
+                  {t('home.subscribe') || 'Subscribe'} <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* ✅ Feedback Messages */}
+          {newsMessage && (
+            <div 
+              className={`hp-newsletter-feedback ${newsStatus}`} 
+              role="alert"
+              aria-live="polite"
+            >
+              {newsStatus === 'success' && <Star size={14} fill="currentColor" aria-hidden="true" />}
+              {newsStatus === 'error' && <Shield size={14} aria-hidden="true" />}
+              <span>{newsMessage}</span>
+            </div>
+          )}
         </div>
       </section>
     </div>
