@@ -1,8 +1,18 @@
+// src/components/Sidebar/Sidebar.jsx
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Home, ShoppingBag, Package, MapPin, Settings, User, X, Sparkles } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import {
+  Home,
+  ShoppingBag,
+  Package,
+  MapPin,
+  Settings,
+  User,
+  X,
+  Sparkles,
+  Wallet
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
 import './Sidebar.css';
 
 function QualityProductsLogo({ size = 32 }) {
@@ -24,7 +34,6 @@ function QualityProductsLogo({ size = 32 }) {
         fontWeight="bold"
         fontSize="28"
         fill="#ffffff"
-        letterSpacing="1"
       >
         QP
       </text>
@@ -40,20 +49,26 @@ function QualityProductsLogo({ size = 32 }) {
 
 export default function Sidebar({ isOpen, onClose }) {
   const { t } = useTranslation();
+  const location = useLocation();
 
   const navItems = [
-    { path: '/',         icon: Home,        label: t('nav.home') },
-    { path: '/products', icon: ShoppingBag, label: t('nav.products') },
-    { path: '/orders',   icon: Package,     label: t('nav.orders') },
-    { path: '/tracking', icon: MapPin,      label: t('nav.tracking') },
-    { path: '/account',  icon: User,        label: t('nav.account') },
-    { path: '/settings', icon: Settings,    label: t('nav.settings') },
+    { path: '/',         icon: Home,        labelKey: 'nav.home' },
+    { path: '/products', icon: ShoppingBag, labelKey: 'nav.products' },
+    { path: '/orders',   icon: Package,     labelKey: 'nav.orders' },
+    { path: '/tracking', icon: MapPin,      labelKey: 'nav.tracking' },
+    { path: '/account',  icon: User,        labelKey: 'nav.account' },
+    { path: '/wallet',   icon: Wallet,      labelKey: 'nav.wallet' },
+    { path: '/settings', icon: Settings,    labelKey: 'nav.settings' },
   ];
 
   return (
     <>
+      {/* Overlay */}
       {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
+
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+
+        {/* Header */}
         <div className="sidebar-header">
           <NavLink to="/" className="brand-name" onClick={onClose}>
             <QualityProductsLogo size={32} />
@@ -61,32 +76,43 @@ export default function Sidebar({ isOpen, onClose }) {
               Quality<span className="brand-accent">Products</span>
             </span>
           </NavLink>
+
           <button className="sidebar-close" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
+        {/* Navigation */}
         <nav className="sidebar-nav">
-          {navItems.map(({ path, icon: Icon, label }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={path === '/'}
-              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
-            >
-              <Icon size={20} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+          {navItems.map(({ path, icon: Icon, labelKey }) => {
+            
+            // 🔥 Smart active logic (handles nested routes like /wallet/add)
+            const isActive =
+              location.pathname === path ||
+              location.pathname.startsWith(path + '/');
+
+            return (
+              <NavLink
+                key={path}
+                to={path}
+                className={`sidebar-link ${isActive ? 'active' : ''}`}
+                onClick={onClose}
+              >
+                <Icon size={20} />
+                <span>{t(labelKey)}</span>
+              </NavLink>
+            );
+          })}
         </nav>
 
+        {/* Footer */}
         <div className="sidebar-footer">
           <div className="ai-badge">
             <Sparkles size={14} />
             <span>Powered by QualityProducts</span>
           </div>
         </div>
+
       </aside>
     </>
   );

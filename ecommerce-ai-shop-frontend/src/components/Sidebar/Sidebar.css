@@ -155,6 +155,29 @@ body.light .sidebar-link:hover {
   border-radius: 0 3px 3px 0;
 }
 
+/* Add to existing Sidebar.css */
+
+/* Ensure Font Awesome icons align with lucide-react icons */
+.sidebar-link svg.fa-svg-icon {
+  width: 20px !important;
+  height: 20px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.18s ease;
+}
+
+.sidebar-link:hover svg.fa-svg-icon,
+.sidebar-link.active svg.fa-svg-icon {
+  opacity: 1;
+}
+
+/* Optional: Add wallet-specific accent color on active */
+.sidebar-link.active[href="/wallet"] {
+  color: var(--accent);
+}
+
 /* ============================================
    Footer / AI Badge
    ============================================ */

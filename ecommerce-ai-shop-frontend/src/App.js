@@ -25,6 +25,9 @@ import PriceDropProductPage from './pages/PriceDropProductPage';
 import WhishList from './pages/WhishList';
 import { userAPI } from './api/api';
 import toast from 'react-hot-toast';
+import WalletPage from './pages/Wallet/WalletPage';
+import AddFundsPage from './pages/Wallet/AddFunds';
+import WithdrawPage from './pages/Wallet/Withdraw';
 
 // Utility: Convert URL-safe base64 to ArrayBuffer
 const urlBase64ToUint8Array = (base64String) => {
@@ -300,6 +303,32 @@ function AppContent() {
             <Route path="/wishlist" element={<WhishList />} />
             <Route path="/notifications" element={<ProtectedRoute><Notificationspage /></ProtectedRoute>} />
             <Route path="/offers" element={<Offerspage />} />
+            <Route 
+              path="/wallet" 
+              element={
+             <ProtectedRoute>
+              <WalletPage />
+             </ProtectedRoute>
+          } 
+      />
+
+<Route 
+  path="/wallet/add-funds" 
+  element={
+    <ProtectedRoute>
+      <AddFundsPage />
+    </ProtectedRoute>
+  } 
+/>
+
+<Route 
+  path="/wallet/withdraw" 
+  element={
+    <ProtectedRoute>
+      <WithdrawPage />
+    </ProtectedRoute>
+  } 
+/>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
