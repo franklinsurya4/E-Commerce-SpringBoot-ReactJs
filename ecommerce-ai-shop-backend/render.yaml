@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ai-shop-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    port: 8080
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DATABASE_URL
+        sync: false
