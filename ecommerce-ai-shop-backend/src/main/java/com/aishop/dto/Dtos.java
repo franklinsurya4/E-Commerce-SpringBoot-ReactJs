@@ -92,8 +92,8 @@ public class Dtos {
         private LocalDateTime priceDropDate;
         private LocalDateTime priceDropExpiry;
         private Boolean isPriceDropped;
-        private Integer discountPercent;    // Computed
-        private BigDecimal savingsAmount;   // Computed
+        private Integer discountPercent;
+        private BigDecimal savingsAmount;
 
         private String imageUrl;
         private List<String> images;
@@ -179,11 +179,6 @@ public class Dtos {
         private BigDecimal lineTotal;
     }
 
-    // ═══════════════════════════════════════════════
-    //  FIX: Added addressId — checkout sends this
-    //  Service resolves it to address fields
-    //  Items come from CART database, not from request
-    // ═══════════════════════════════════════════════
     @Data @NoArgsConstructor @AllArgsConstructor
     public static class PlaceOrderRequest {
         private Long addressId;
@@ -194,6 +189,7 @@ public class Dtos {
         private String shippingCountry;
         private String paymentMethod;
         private String paymentId;
+        private String orderNumber;
     }
 
     @Data @NoArgsConstructor @AllArgsConstructor @Builder
@@ -247,6 +243,64 @@ public class Dtos {
         private List<ProductDto> suggestedProducts;
     }
 
+    // ═══════════════════════════════════════════════
+    //  ✅ PUSH NOTIFICATION DTOs — FIXED NAMES
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Keys object inside a push subscription (p256dh + auth)
+     * ✅ RENAMED: PushSubscriptionKeysDto → PushSubscriptionKeys
+     */
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class PushSubscriptionKeys {  // ✅ NO "Dto" suffix
+        private String p256dh;
+        private String auth;
+    }
+
+    /**
+     * Full push subscription object returned to frontend
+     */
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class PushSubscriptionDto {
+        private Long id;
+        private String endpoint;
+        private PushSubscriptionKeys keys;  // ✅ References renamed class
+        private String userAgent;
+        private Boolean active;
+        private String deviceInfo;
+        private String platform;
+        private String endpointMasked;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+    }
+
+    /**
+     * Request body for POST /api/notifications/subscribe
+     * ✅ RENAMED: SavePushSubscriptionRequest → PushSubscriptionRequest
+     */
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class PushSubscriptionRequest {  // ✅ Matches controller import
+        private String endpoint;
+        private PushSubscriptionKeys keys;  // ✅ References renamed keys class
+        private String userAgent;
+        private String ipAddress;
+    }
+
+    /**
+     * Summary for listing user's subscriptions
+     */
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class SubscriptionSummary {
+        private Long id;
+        private String endpointMasked;
+        private String deviceInfo;
+        private String userAgent;
+        private String platform;
+        private Boolean active;
+        private LocalDateTime createdAt;
+        private LocalDateTime lastUsedAt;
+    }
+
     // ========== GENERIC ==========
     @Data @NoArgsConstructor @AllArgsConstructor @Builder
     public static class ApiResponse<T> {
@@ -254,8 +308,6 @@ public class Dtos {
         private String message;
         private T data;
         private int statusCode;
-
-        // ── Success Responses ──
 
         public static <T> ApiResponse<T> ok(T data) {
             return ApiResponse.<T>builder()
@@ -272,27 +324,20 @@ public class Dtos {
                     .success(true).message(message).data(data).statusCode(statusCode).build();
         }
 
-        // ── Error Responses ──
-
-        /** Single arg: defaults to 400 Bad Request */
         public static <T> ApiResponse<T> error(String message) {
             return ApiResponse.<T>builder()
                     .success(false).message(message).statusCode(400).build();
         }
 
-        /** Two args: custom status code */
         public static <T> ApiResponse<T> error(String message, int statusCode) {
             return ApiResponse.<T>builder()
                     .success(false).message(message).statusCode(statusCode).build();
         }
 
-        /** Three args: with error data payload */
         public static <T> ApiResponse<T> error(String message, int statusCode, T data) {
             return ApiResponse.<T>builder()
                     .success(false).message(message).data(data).statusCode(statusCode).build();
         }
-
-        // ── Convenience Methods ──
 
         public static <T> ApiResponse<T> badRequest(String message) {
             return error(message, 400);

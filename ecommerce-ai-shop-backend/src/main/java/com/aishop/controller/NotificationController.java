@@ -1,7 +1,8 @@
 package com.aishop.controller;
 
-import com.aishop.dto.PushSubscriptionRequest;
-import com.aishop.dto.SubscriptionSummary;
+import com.aishop.dto.Dtos.PushSubscriptionRequest;      // ✅ Updated import
+import com.aishop.dto.Dtos.PushSubscriptionKeys;          // ✅ Updated import
+import com.aishop.dto.Dtos.SubscriptionSummary;           // ✅ Updated import
 import com.aishop.model.PushSubscription;
 import com.aishop.model.User;
 import com.aishop.repository.PushSubscriptionRepository;
@@ -93,12 +94,12 @@ public class NotificationController {
         return ResponseEntity.ok(new VapidPublicKeyResponse(publicKey));
     }
 
-    // GET /api/notifications/subscriptions - List user's subscriptions
     @GetMapping("/subscriptions")
     public ResponseEntity<List<SubscriptionSummary>> getUserSubscriptions(
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
         User user = userDetails.getUser();
+
         List<PushSubscription> subscriptions = subscriptionRepo.findByUserIdAndActiveTrue(user.getId());
 
         List<SubscriptionSummary> summaries = subscriptions.stream()
@@ -109,7 +110,7 @@ public class NotificationController {
                         .userAgent(sub.getUserAgent())
                         .createdAt(sub.getCreatedAt())
                         .lastUsedAt(sub.getLastUsedAt())
-                        .active(sub.isActive())
+                        .active(sub.getActive())
                         .platform(UserAgentParser.parsePlatform(sub.getUserAgent()))
                         .build())
                 .collect(Collectors.toList());
@@ -142,7 +143,6 @@ public class NotificationController {
         }
     }
 
-    // PATCH /api/notifications/subscriptions/{id} - Update subscription
     @PatchMapping("/subscriptions/{id}")
     public ResponseEntity<?> updateSubscription(
             @PathVariable Long id,
@@ -155,7 +155,6 @@ public class NotificationController {
 
         User user = userDetails.getUser();
 
-        // Find subscription and verify ownership
         Optional<PushSubscription> optionalSub = subscriptionRepo.findById(id);
         if (optionalSub.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -166,11 +165,9 @@ public class NotificationController {
             return ResponseEntity.status(403).body("Forbidden: Cannot modify another user's subscription");
         }
 
-        // Apply allowed updates only
         if (updates.containsKey("active")) {
             subscription.setActive((Boolean) updates.get("active"));
         }
-        // Note: Never allow updating endpoint/keys via this endpoint for security
 
         subscription.setLastUsedAt(LocalDateTime.now());
         subscriptionRepo.save(subscription);
@@ -179,9 +176,6 @@ public class NotificationController {
         return ResponseEntity.ok(Map.of("message", "Subscription updated", "id", id));
     }
 
-
-
-    // Response DTO for VAPID key
     @Data
     @RequiredArgsConstructor
     public static class VapidPublicKeyResponse {

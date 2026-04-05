@@ -8,6 +8,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 second timeout
 });
 
 // Request interceptor: Attach JWT token
@@ -19,7 +20,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: Handle 401 errors globally
+// Response interceptor: Handle errors globally
 api.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -68,7 +69,7 @@ export const productAPI = {
   search: (query) => api.get(`/products/search`, { params: { q: query } }),
   getCategories: () => api.get('/products/categories'),
   
-  // 🔥 Price Drop Endpoints
+  // Price Drop Endpoints
   getPriceDrops: () => api.get('/products/price-drops'),
   getPriceDropsByCategory: (category) => api.get(`/products/price-drops/category/${encodeURIComponent(category)}`),
   getPriceDropsSorted: (sortBy = 'discount') => api.get('/products/price-drops/sorted', { params: { sortBy } }),
@@ -116,6 +117,16 @@ export const userAPI = {
   updateAddress: (id, data) => api.put(`/user/addresses/${id}`, data),
   deleteAddress: (id) => api.delete(`/user/addresses/${id}`),
   setDefaultAddress: (id) => api.patch(`/user/addresses/${id}/default`),
+
+  // Push Notifications
+  getPushSubscription: () => api.get('/user/push-subscription'),
+  savePushSubscription: (data) => 
+    api.post('/user/push-subscription', {
+      endpoint: data.endpoint,
+      keys: data.keys,
+      userAgent: data.userAgent
+    }),
+  deletePushSubscription: () => api.delete('/user/push-subscription'),
 };
 
 // ==================== 🔔 PUSH NOTIFICATIONS API ====================
@@ -270,27 +281,10 @@ export const pushUtils = {
   },
 };
 
-// ==================== 📧 NEWSLETTER API ====================
+// ==================== NEWSLETTER API ====================
 export const newsletterAPI = {
-  /**
-   * Subscribe an email to the newsletter
-   * @param {string} email - User's email address
-   * @returns {Promise<{message: string}>} Success response
-   */
   subscribe: (email) => api.post('/newsletter/subscribe', { email }),
-  
-  /**
-   * Unsubscribe an email from the newsletter
-   * @param {string} email - User's email address
-   * @returns {Promise<{message: string}>} Success response
-   */
   unsubscribe: (email) => api.post('/newsletter/unsubscribe', { email }),
-  
-  /**
-   * Check if an email is already subscribed
-   * @param {string} email - Email to check
-   * @returns {Promise<{subscribed: boolean}>}
-   */
   checkStatus: (email) => api.get('/newsletter/status', { params: { email } }),
 };
 
@@ -330,6 +324,68 @@ export const notificationsUI = {
   markAllAsRead: () => api.patch('/notifications/ui/read-all'),
   delete: (id) => api.delete(`/notifications/ui/${id}`),
   getUnreadCount: () => api.get('/notifications/ui/unread-count').then(res => res.data.count),
+};
+
+// ==================== 💰 WALLET API ====================
+export const walletAPI = {
+  /**
+   * Get current wallet balance
+   * @returns {Promise<{balance: number, currency: string}>}
+   */
+  getBalance: () => api.get('/wallet/balance').then(res => res.data),
+  
+  /**
+   * Add funds to wallet
+   * @param {Object} data - { amount: number, paymentMethod: string, paymentDetails?: object }
+   * @returns {Promise<{success: boolean, newBalance: number, transactionId: string}>}
+   */
+  addFunds: (data) => api.post('/wallet/add-funds', {
+    amount: parseFloat(data.amount),
+    paymentMethod: data.paymentMethod,
+    paymentDetails: data.paymentDetails,
+    currency: data.currency || 'USD'
+  }).then(res => res.data),
+  
+  /**
+   * Withdraw funds from wallet
+   * @param {Object} data - { amount: number, account: string }
+   * @returns {Promise<{success: boolean, newBalance: number, transactionId: string}>}
+   */
+  withdraw: (data) => api.post('/wallet/withdraw', {
+    amount: parseFloat(data.amount),
+    account: data.account,
+    currency: data.currency || 'USD'
+  }).then(res => res.data),
+  
+  /**
+   * Get wallet transactions
+   * @param {Object} params - { type?, status?, limit?, page? }
+   * @returns {Promise<{transactions: Array, total: number}>}
+   */
+  getTransactions: (params = {}) => api.get('/wallet/transactions', { params }).then(res => res.data),
+  
+  /**
+   * Charge wallet for order payment (used by CartPage)
+   * @param {Object} data - { amount, orderId, description? }
+   * @returns {Promise<{success: boolean, transactionId: string, newBalance: number}>}
+   */
+  charge: (data) => api.post('/wallet/charge', {
+    amount: parseFloat(data.amount),
+    orderId: data.orderId,
+    description: data.description || 'Order payment',
+    currency: data.currency || 'USD'
+  }).then(res => res.data),
+  
+  /**
+   * Refund a wallet transaction
+   * @param {Object} data - { transactionId, reason? }
+   * @returns {Promise<{success: boolean, refundedAmount: number}>}
+   */
+  refund: (data) => api.post('/wallet/refund', {
+    transactionId: data.transactionId,
+    reason: data.reason || 'Refund requested',
+    currency: data.currency || 'USD'
+  }).then(res => res.data),
 };
 
 // ==================== EXPORT DEFAULT ====================

@@ -1,0 +1,540 @@
+:root {
+  --bg-primary: #0a0c14;
+  --bg-secondary: #10131c;
+  --bg-card: #151825;
+  --bg-elevated: #1a1e2e;
+  --bg-hover: #1f2437;
+  --bg-input: #12151f;
+  --text-primary: #f0f2f8;
+  --text-secondary: #8b92a8;
+  --text-muted: #5a6178;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-soft: rgba(99, 102, 241, 0.1);
+  --success: #22c55e;
+  --danger: #ef4444;
+  --border: #1e2235;
+  --border-light: #252a3e;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --font: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Light mode overrides via body class */
+body.light {
+  --bg-primary: #e9d8e5;
+  --bg-secondary: #f8fafc;
+  --bg-card: #f5f3f3;
+  --bg-elevated: #f1f5f9;
+  --bg-hover: #e2e8f0;
+  --bg-input: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent: #4f46e5;
+  --accent-hover: #6366f1;
+  --accent-soft: rgba(79, 70, 229, 0.1);
+  --success: #16a34a;
+  --danger: #dc2626;
+  --border: #e2e8f0;
+  --border-light: #cbd5e1;
+}
+
+/* =========================================
+   Page Header (New Section)
+   ========================================= */
+.account-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+
+.account-page-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  color: #ffffff;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.account-page-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.account-page-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* =========================================
+   Account Header (Avatar + Info)
+   ========================================= */
+.account-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.account-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.account-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.account-email {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0 0 6px 0;
+  font-family: var(--font-mono);
+}
+
+.account-member {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* =========================================
+   Stats Grid
+   ========================================= */
+.orders-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-label {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* =========================================
+   Account Grid Layout
+   ========================================= */
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+/* =========================================
+   Account Cards
+   ========================================= */
+.account-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  transition: border-color 0.2s ease;
+}
+
+.account-card:hover {
+  border-color: var(--border-light);
+}
+
+.account-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 20px 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-card h3 svg {
+  color: var(--accent);
+}
+
+/* =========================================
+   Info Rows
+   ========================================= */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+
+.info-row:last-of-type {
+  border-bottom: none;
+}
+
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.info-label svg {
+  color: var(--accent);
+  opacity: 0.9;
+}
+
+.info-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+  word-break: break-word;
+}
+
+/* =========================================
+   Form Styles (Inline Forms)
+   ========================================= */
+.account-card .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.account-card .form-group label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.account-card .form-group input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-family: var(--font);
+  transition: all 0.2s ease;
+}
+
+.account-card .form-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
+.account-card .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.account-card .form-grid .full {
+  grid-column: 1 / -1;
+}
+
+/* =========================================
+   Address Cards
+   ========================================= */
+.address-card {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  transition: border-color 0.2s ease;
+}
+
+.address-card:hover {
+  border-color: var(--accent);
+}
+
+.address-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.address-label .badge {
+  margin-left: 4px;
+}
+
+.address-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.address-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* =========================================
+   Quick Links
+   ========================================= */
+.account-card .btn-secondary.btn-sm {
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 10px 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.account-card .btn-secondary.btn-sm:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-light);
+  transform: translateX(4px);
+}
+
+.account-card .btn-secondary.btn-sm svg {
+  color: var(--accent);
+}
+
+/* =========================================
+   Address Form Section
+   ========================================= */
+.address-form-wrapper {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
+.address-form-wrapper .form-grid {
+  margin-bottom: 12px;
+}
+
+.address-form-wrapper label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.address-form-wrapper input[type="checkbox"] {
+  width: auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.address-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* =========================================
+   Empty State
+   ========================================= */
+.account-card p[style*="color: var(--text-muted)"] {
+  padding: 20px 0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* =========================================
+   Responsive
+   ========================================= */
+@media (max-width: 1024px) {
+  .orders-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .account-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  
+  .account-header {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding: 20px 16px;
+  }
+  
+  .account-avatar {
+    width: 64px;
+    height: 64px;
+    font-size: 1.5rem;
+  }
+  
+  .account-name {
+    font-size: 1.25rem;
+  }
+  
+  .orders-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .stat-number {
+    font-size: 1.75rem;
+  }
+  
+  .account-card .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .address-actions {
+    flex-direction: column;
+  }
+  
+  .address-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .account-page-title {
+    font-size: 1.5rem;
+  }
+  
+  .account-page-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.78rem;
+  }
+  
+  .account-card {
+    padding: 20px 16px;
+  }
+  
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .info-value {
+    text-align: left;
+  }
+}
+
+/* =========================================
+   Animation & Polish
+   ========================================= */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.account-header,
+.orders-stats,
+.account-grid > * {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+.account-grid > *:nth-child(1) { animation-delay: 0.1s; }
+.account-grid > *:nth-child(2) { animation-delay: 0.2s; }
+.account-grid > *:nth-child(3) { animation-delay: 0.3s; }
+
+/* Focus visible for accessibility */
+.btn:focus-visible,
+input:focus-visible,
+.address-card:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

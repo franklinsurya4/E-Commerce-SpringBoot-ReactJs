@@ -55,6 +55,8 @@ html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  height: 100%;
+  overflow: hidden; /* Locks viewport height */
 }
 
 body {
@@ -64,7 +66,8 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden; /* Disables default document scroll */
 }
 
 a { color: var(--accent); text-decoration: none; transition: color var(--transition); }
@@ -112,14 +115,19 @@ input::placeholder, textarea::placeholder {
    ============================================ */
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh; /* Fixes mobile address bar jump */
+  overflow: hidden;
 }
 
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
   padding-top: var(--header-height);
-  min-height: 100vh;
+  min-height: 0; /* Critical: allows flex child to shrink */
+  overflow-y: auto; /* ONLY this section scrolls */
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   transition: margin-left var(--transition-slow);
 }
 

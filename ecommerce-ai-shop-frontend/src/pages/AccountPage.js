@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-// Using Lucide icons for consistency. 
-// To use FontAwesome: import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; import { faUser } from '@fortawesome/free-solid-svg-icons';
 import { User, Mail, Phone, MapPin, Package, Settings, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { userAPI, orderAPI } from '../api/api';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import '../styles/AccountPage.css';
 
 export default function AccountPage() {
   const { user, updateUser } = useAuth();

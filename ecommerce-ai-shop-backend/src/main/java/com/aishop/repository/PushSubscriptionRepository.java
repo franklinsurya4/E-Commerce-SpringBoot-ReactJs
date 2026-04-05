@@ -1,4 +1,3 @@
-// src/main/java/com/aishop/repository/PushSubscriptionRepository.java
 package com.aishop.repository;
 
 import com.aishop.model.PushSubscription;
@@ -13,16 +12,32 @@ import java.util.Optional;
 @Repository
 public interface PushSubscriptionRepository extends JpaRepository<PushSubscription, Long> {
 
-    // List<PushSubscription> findByUserIdAndActiveTrue(Long userId);
+    // ══════════════════════════════════════════════
+    //  🔹 FIND METHODS
+    // ══════════════════════════════════════════════
 
-    Optional<PushSubscription> findByUserIdAndEndpoint(Long userId, String endpoint);
-
-    void deleteByUserId(Long userId);
-
-    void deleteByUserIdAndEndpoint(Long userId, String endpoint);
-
-    void deleteByEndpoint(String endpoint);
-
+    /**
+     * ✅ Returns List — Controller expects multiple active subscriptions per user
+     * (user may have phone + desktop + tablet)
+     */
     @Query("SELECT s FROM PushSubscription s WHERE s.user.id = :userId AND s.active = true")
     List<PushSubscription> findByUserIdAndActiveTrue(@Param("userId") Long userId);
+
+    /**
+     * Find specific subscription by user + endpoint (for duplicate check)
+     */
+    Optional<PushSubscription> findByUserIdAndEndpoint(Long userId, String endpoint);
+
+    /**
+     * Find by endpoint only (for cleanup)
+     */
+    Optional<PushSubscription> findByEndpointAndActiveTrue(String endpoint);
+
+    // ══════════════════════════════════════════════
+    //  🔹 DELETE METHODS
+    // ══════════════════════════════════════════════
+
+    void deleteByUserId(Long userId);
+    void deleteByUserIdAndEndpoint(Long userId, String endpoint);
+    void deleteByEndpoint(String endpoint);
 }

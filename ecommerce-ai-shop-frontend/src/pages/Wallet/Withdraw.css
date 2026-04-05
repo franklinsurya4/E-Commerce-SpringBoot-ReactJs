@@ -379,3 +379,80 @@ body.dark .withdraw-modal-overlay {
 .withdraw-modal-card::-webkit-scrollbar-thumb:hover {
   background: var(--wd-border-input-focus);
 }
+
+/* Low Balance Warning */
+.wd-low-balance-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--wd-text-error);
+  line-height: 1.4;
+}
+
+body.dark .wd-low-balance-warning,
+.withdraw-modal-overlay.dark .wd-low-balance-warning {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Quick Amount Buttons */
+.wd-quick-amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.wd-quick-btn {
+  padding: 7px 14px;
+  border: 1.5px solid var(--wd-border-input);
+  border-radius: 8px;
+  background: var(--wd-bg-input);
+  color: var(--wd-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.wd-quick-btn:hover {
+  border-color: var(--wd-border-input-focus);
+  color: var(--wd-text-primary);
+}
+
+.wd-quick-btn.active {
+  border-color: var(--wd-bg-button-primary);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--wd-bg-button-primary);
+}
+
+/* Balance info styling */
+.wd-balance-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: var(--wd-bg-summary);
+  border: 1px solid var(--wd-border-summary);
+  border-radius: 10px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.wd-balance-info span {
+  font-size: 0.85rem;
+  color: var(--wd-text-muted);
+  font-weight: 500;
+}
+
+.wd-balance-info strong {
+  font-size: 1.15rem;
+  color: var(--wd-text-primary);
+  font-weight: 700;
+}

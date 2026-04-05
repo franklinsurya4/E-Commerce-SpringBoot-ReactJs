@@ -27,7 +27,6 @@ export function CartProvider({ children }) {
       const data = res.data?.data || {};
       const items = data.items || [];
 
-      // Backend sends BigDecimal as numbers/strings
       const subtotal = parseFloat(data.subtotal) || 0;
       const tax = parseFloat(data.tax) || 0;
       const shipping = parseFloat(data.shipping) || 0;
@@ -46,10 +45,38 @@ export function CartProvider({ children }) {
     fetchCart();
   }, [fetchCart]);
 
-  const addToCart = async (productId, quantity = 1) => {
-    // This throws on failure — caller (ProductDetailPage) catches it
-    const res = await cartAPI.add({ productId, quantity });
-    // Refresh cart in background — don't let this fail break the flow
+  /**
+   * Add item to cart — supports BOTH calling patterns:
+   * 
+   *   addToCart(productId, quantity)                         → simple
+   *   addToCart({ productId, quantity, name, brand, ... })   → object (extra fields ignored)
+   * 
+   * Backend only needs { productId, quantity }
+   */
+  const addToCart = async (productIdOrObj, quantity = 1) => {
+    let pid, qty;
+
+    if (typeof productIdOrObj === 'object' && productIdOrObj !== null) {
+      // Object pattern: addToCart({ productId: 5, quantity: 2, name: '...', ... })
+      pid = productIdOrObj.productId || productIdOrObj.id;
+      qty = productIdOrObj.quantity || quantity;
+    } else {
+      // Simple pattern: addToCart(5, 2)
+      pid = productIdOrObj;
+      qty = quantity;
+    }
+
+    if (!pid) {
+      throw new Error('Product ID is required');
+    }
+
+    // Only send what the backend expects
+    const res = await cartAPI.add({
+      productId: Number(pid),
+      quantity: Number(qty) || 1
+    });
+
+    // Refresh cart in background
     try { await fetchCart(); } catch {}
     return res;
   };

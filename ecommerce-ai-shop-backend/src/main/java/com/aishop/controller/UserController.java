@@ -1,6 +1,6 @@
 package com.aishop.controller;
 
-import com.aishop.dto.Dtos.*;
+import com.aishop.dto.Dtos.*;  // ✅ Imports all nested DTOs: PushSubscriptionRequest, PushSubscriptionDto, etc.
 import com.aishop.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -59,5 +59,33 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> deleteAddress(Authentication auth, @PathVariable Long id) {
         userService.deleteAddress(getUserId(auth), id);
         return ResponseEntity.ok(ApiResponse.ok("Address deleted", null));
+    }
+
+    // ══════════════════════════════════════════════
+    //  ✅ PUSH SUBSCRIPTION ENDPOINTS — FIXED
+    // ══════════════════════════════════════════════
+
+    @GetMapping("/push-subscription")
+    public ResponseEntity<ApiResponse<PushSubscriptionDto>> getPushSubscription(Authentication auth) {
+        PushSubscriptionDto subscription = userService.getPushSubscription(getUserId(auth));
+        if (subscription == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(ApiResponse.ok(subscription));
+    }
+
+    @PostMapping("/push-subscription")
+    public ResponseEntity<ApiResponse<PushSubscriptionDto>> savePushSubscription(
+            Authentication auth,
+            @RequestBody PushSubscriptionRequest request) {  // ✅ FIXED: SavePushSubscriptionRequest → PushSubscriptionRequest
+
+        PushSubscriptionDto saved = userService.savePushSubscription(getUserId(auth), request);
+        return ResponseEntity.ok(ApiResponse.ok("Push subscription saved", saved));
+    }
+
+    @DeleteMapping("/push-subscription")
+    public ResponseEntity<ApiResponse<Void>> deletePushSubscription(Authentication auth) {
+        userService.deletePushSubscription(getUserId(auth));
+        return ResponseEntity.ok(ApiResponse.ok("Push subscription removed", null));
     }
 }

@@ -88,15 +88,11 @@ export default function OrdersPage() {
 
   return (
     <div className="page-container">
-      {/* ── Page Title with Font Awesome Icon ── */}
-     <div className="page-title-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'nowrap' }}>
-  <FontAwesomeIcon 
-    icon={faBoxOpen} 
-    className="page-title-icon"
-    style={{ display: 'inline-flex', verticalAlign: 'middle', lineHeight: 1 }}
-  />
-  <h1 className="page-title" style={{ display: 'inline-block', verticalAlign: 'middle', margin: 0 }}>{t('orders.title')}</h1>
-</div>
+      {/* ── Page Title: Single Row, Top-Left ── */}
+      <div className="page-title-wrapper">
+        <FontAwesomeIcon icon={faBoxOpen} className="page-title-icon" />
+        <h1 className="page-title">{t('orders.title')}</h1>
+      </div>
 
       <div className="orders-stats">
         <div className="stat-card">

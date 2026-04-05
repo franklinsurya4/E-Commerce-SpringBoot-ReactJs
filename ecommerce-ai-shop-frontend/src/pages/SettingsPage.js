@@ -5,6 +5,8 @@ import { userAPI } from '../api/api';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
+// Solid icons
 import { 
   faGear, 
   faFileContract, 
@@ -16,8 +18,21 @@ import {
   faCartShopping,
   faTag,
   faLock,
-  faFlask
+  faFlask,
+  faClockRotateLeft,
+  faInfoCircle,
+  faStar,
+  faHeart,
+  faUsers,
+  faGlobe,
+  faCodeBranch,
+  faBug,
+  faHandshake
 } from '@fortawesome/free-solid-svg-icons';
+
+// Brand icons (for LinkedIn)
+import { faLinkedin } from '@fortawesome/free-brands-svg-icons';
+
 import '../styles/settings-mobile.css';
 
 export default function SettingsPage() {
@@ -35,13 +50,34 @@ export default function SettingsPage() {
     promotions: false,
     securityAlerts: true
   });
+  
+  // State for Activities tab
+  const [activities, setActivities] = useState([]);
+  const [activityFilter, setActivityFilter] = useState('all');
 
   // Check push notification permission on mount
   useEffect(() => {
     if ('Notification' in window) {
       setPushPermission(Notification.permission);
     }
+    fetchUserActivities();
   }, []);
+
+  const fetchUserActivities = async () => {
+    try {
+      // Replace with actual API call: await userAPI.getActivities()
+      const mockActivities = [
+        { id: 1, type: 'login', description: 'Logged in from Chrome on Windows', timestamp: '2026-04-04T10:30:00Z' },
+        { id: 2, type: 'purchase', description: 'Completed order #ORD-2847', timestamp: '2026-04-03T15:22:00Z' },
+        { id: 3, type: 'settings', description: 'Updated notification preferences', timestamp: '2026-04-02T09:15:00Z' },
+        { id: 4, type: 'password', description: 'Password changed successfully', timestamp: '2026-04-01T14:45:00Z' },
+        { id: 5, type: 'login', description: 'Logged in from Safari on iPhone', timestamp: '2026-03-31T08:00:00Z' },
+      ];
+      setActivities(mockActivities);
+    } catch (err) {
+      console.error('Failed to fetch activities:', err);
+    }
+  };
 
   const saveProfile = async () => {
     setSaving(true);
@@ -66,14 +102,12 @@ export default function SettingsPage() {
     const newVal = !pushSubSettings[key];
     setPushSubSettings(prev => ({ ...prev, [key]: newVal }));
     try {
-      // Save to backend - store as nested object or flattened keys
       const res = await userAPI.updateSettings({ 
         pushNotificationPreferences: { ...pushSubSettings, [key]: newVal }
       });
       updateUser(res.data.data);
       toast.success(t('settings.settingUpdated'));
     } catch { 
-      // Revert on error
       setPushSubSettings(prev => ({ ...prev, [key]: !newVal }));
       toast.error(t('settings.failedUpdate')); 
     }
@@ -91,7 +125,6 @@ export default function SettingsPage() {
       
       if (permission === 'granted') {
         toast.success(t('settings.pushEnabled'));
-        // Optionally register for push service here
       } else if (permission === 'denied') {
         toast.error(t('settings.pushDenied'));
       }
@@ -145,91 +178,67 @@ export default function SettingsPage() {
     setExpandedPolicy(expandedPolicy === id ? null : id);
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(i18n.language, { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getActivityIcon = (type) => {
+    const icons = {
+      login: faClockRotateLeft,
+      purchase: faCartShopping,
+      settings: faGear,
+      password: faLock,
+      default: faCircleInfo
+    };
+    return icons[type] || icons.default;
+  };
+
+  const getActivityColor = (type) => {
+    const colors = {
+      login: '#3b82f6',
+      purchase: '#22c55e',
+      settings: '#7c3aed',
+      password: '#f59e0b',
+      default: '#6b7280'
+    };
+    return colors[type] || colors.default;
+  };
+
   const policies = [
     {
       id: 'terms',
       icon: faFileContract,
-      title: 'Terms of Service',
-      lastUpdated: '2026-01-15',
-      content: `1. Acceptance of Terms
-By accessing and using this application, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use this service.
-
-2. User Account
-You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account.
-
-3. Intellectual Property
-All content, features, and functionality available through this service, including text, graphics, logos, and software, are the exclusive property of the company and are protected by copyright laws.
-
-4. Prohibited Conduct
-You agree not to use the service for any unlawful purpose or to solicit others to perform or participate in any unlawful acts. You agree not to interfere with or disrupt the service or servers.
-
-5. Termination
-We reserve the right to terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.
-
-6. Disclaimer of Warranties
-Your use of the service is at your sole risk. The service is provided on an "AS IS" and "AS AVAILABLE" basis without any warranty of any kind.`
+      title: t('settings.termsOfService'),
+      lastUpdated: t('settings.termsLastUpdated'),
+      content: t('settings.termsContent')
     },
     {
       id: 'privacy',
       icon: faShieldHalved,
-      title: 'Privacy Policy',
-      lastUpdated: '2026-02-01',
-      content: `1. Information Collection
-We collect information you provide directly to us, such as when you create an account, update your profile, or communicate with us. This may include your name, email address, and phone number.
-
-2. How We Use Information
-We use the information we collect to provide, maintain, and improve our services, to process transactions, to send you technical notices and support messages, and to communicate with you about products, services, and events.
-
-3. Information Sharing
-We do not sell your personal information. We may share information with vendors, service providers, and affiliates who need access to such information to carry out work on our behalf.
-
-4. Data Security
-We implement reasonable security measures designed to protect your information from unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the Internet is 100% secure.
-
-5. Your Rights
-You have the right to access, update, or delete your personal information. You may do so through your account settings or by contacting our support team.
-
-6. Changes to This Policy
-We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last Updated" date.`
+      title: t('settings.privacyPolicy'),
+      lastUpdated: t('settings.privacyLastUpdated'),
+      content: t('settings.privacyContent')
     },
     {
       id: 'cookie',
       icon: faCookieBite,
-      title: 'Cookie Policy',
-      lastUpdated: '2025-12-10',
-      content: `1. What Are Cookies
-Cookies are small text files that are placed on your device (computer, smartphone, or tablet) when you visit a website. They are widely used to make websites work more efficiently.
-
-2. Types of Cookies We Use
-- Essential Cookies: These are necessary for the website to function properly.
-- Performance Cookies: These collect information about how visitors use a website, for instance, which pages visitors go to most often.
-- Functionality Cookies: These allow the website to remember choices you make (such as your user name, language, or the region you are in).
-
-3. Third-Party Cookies
-In addition to our own cookies, we may also use various third-party cookies to report usage statistics of the service and deliver advertisements on and through the service.
-
-4. Managing Cookies
-Most web browsers allow some control of most cookies through the browser settings. You can set your browser to refuse all or some cookies, but note that some parts of the service may not function correctly without them.`
+      title: t('settings.cookiePolicy'),
+      lastUpdated: t('settings.cookieLastUpdated'),
+      content: t('settings.cookieContent')
     },
     {
       id: 'refund',
       icon: faEnvelope,
-      title: 'Refund Policy',
-      lastUpdated: '2026-01-20',
-      content: `1. Eligibility for Refunds
-To be eligible for a refund, your request must be made within 14 days of purchase. The item or service must be unused and in the same condition that you received it.
-
-2. Non-Refundable Items
-Certain types of items are exempt from being refunded, such as downloadable software, gift cards, and personal care goods unless defective.
-
-3. Refund Process
-Once your return is received and inspected, we will send you an email to notify you that we have received your returned item. If approved, your credit card or original method of payment will be credited.
-
-4. Late or Missing Refunds
-If you haven't received a refund yet, first check your bank account again. Then contact your credit card company, as it may take some time before your refund is officially posted.
-
-5. Contact Us
-If you have any questions about our Refund Policy, please contact us at support@example.com.`
+      title: t('settings.refundPolicy'),
+      lastUpdated: t('settings.refundLastUpdated'),
+      content: t('settings.refundContent')
     },
   ];
 
@@ -238,10 +247,11 @@ If you have any questions about our Refund Policy, please contact us at support@
     { id: 'notifications', label: t('settings.notifications') },
     { id: 'appearance', label: t('settings.appearance') },
     { id: 'security', label: t('settings.security') },
+    { id: 'activities', label: t('settings.activities') },
+    { id: 'about', label: t('settings.about') },
     { id: 'policies', label: t('settings.termsPolicies') },
   ];
 
-  // Helper component for toggle switch
   const ToggleSwitch = ({ enabled, onToggle, disabled = false, size = 'default' }) => (
     <button 
       className={`toggle ${enabled ? 'active' : ''} ${disabled ? 'disabled' : ''} ${size}`}
@@ -273,6 +283,7 @@ If you have any questions about our Refund Policy, please contact us at support@
       </div>
 
       <div className="settings-section">
+        {/* PROFILE TAB */}
         {tab === 'profile' && (
           <>
             <div className="form-group" style={{ marginBottom: 16 }}>
@@ -303,9 +314,9 @@ If you have any questions about our Refund Policy, please contact us at support@
           </>
         )}
 
+        {/* NOTIFICATIONS TAB */}
         {tab === 'notifications' && (
           <>
-            {/* Email Notifications */}
             <div className="setting-row">
               <div className="setting-info">
                 <h4>{t('settings.emailNotifications')}</h4>
@@ -317,7 +328,6 @@ If you have any questions about our Refund Policy, please contact us at support@
               />
             </div>
 
-            {/* Push Notifications Header */}
             <div style={{ 
               padding: '16px 0', 
               borderBottom: '1px solid var(--border-color)',
@@ -333,7 +343,6 @@ If you have any questions about our Refund Policy, please contact us at support@
                 {t('settings.pushNotificationsDesc')}
               </p>
               
-              {/* Permission Status */}
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -369,7 +378,6 @@ If you have any questions about our Refund Policy, please contact us at support@
                 )}
               </div>
 
-              {/* Main Push Toggle */}
               {pushPermission === 'granted' && (
                 <div className="setting-row" style={{ alignItems: 'center' }}>
                   <div className="setting-info" style={{ flex: 1 }}>
@@ -383,7 +391,6 @@ If you have any questions about our Refund Policy, please contact us at support@
               )}
             </div>
 
-            {/* Push Notification Sub-settings (only show if push is enabled and permission granted) */}
             {pushPermission === 'granted' && user?.pushNotifications && (
               <div style={{ 
                 paddingLeft: 12, 
@@ -399,7 +406,6 @@ If you have any questions about our Refund Policy, please contact us at support@
                   {t('settings.customizePushTypes')}
                 </p>
                 
-                {/* Order Updates */}
                 <div className="setting-row" style={{ padding: '8px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <FontAwesomeIcon icon={faCartShopping} style={{ color: '#3b82f6', width: 16 }} />
@@ -415,7 +421,6 @@ If you have any questions about our Refund Policy, please contact us at support@
                   />
                 </div>
 
-                {/* Promotions */}
                 <div className="setting-row" style={{ padding: '8px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <FontAwesomeIcon icon={faTag} style={{ color: '#f59e0b', width: 16 }} />
@@ -431,7 +436,6 @@ If you have any questions about our Refund Policy, please contact us at support@
                   />
                 </div>
 
-                {/* Security Alerts */}
                 <div className="setting-row" style={{ padding: '8px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <FontAwesomeIcon icon={faLock} style={{ color: '#ef4444', width: 16 }} />
@@ -447,7 +451,6 @@ If you have any questions about our Refund Policy, please contact us at support@
                   />
                 </div>
 
-                {/* Test Notification Button */}
                 <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px dashed var(--border-color)' }}>
                   <button 
                     className="btn btn-sm btn-secondary"
@@ -461,7 +464,6 @@ If you have any questions about our Refund Policy, please contact us at support@
               </div>
             )}
 
-            {/* Helper text for push notifications */}
             <div style={{ 
               marginTop: 8, 
               padding: '12px', 
@@ -477,6 +479,7 @@ If you have any questions about our Refund Policy, please contact us at support@
           </>
         )}
 
+        {/* APPEARANCE TAB */}
         {tab === 'appearance' && (
           <>
             <div className="setting-row">
@@ -516,6 +519,7 @@ If you have any questions about our Refund Policy, please contact us at support@
           </>
         )}
 
+        {/* SECURITY TAB */}
         {tab === 'security' && (
           <>
             <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 16 }}>{t('settings.changePassword')}</h3>
@@ -552,6 +556,304 @@ If you have any questions about our Refund Policy, please contact us at support@
           </>
         )}
 
+        {/* ACTIVITIES TAB */}
+        {tab === 'activities' && (
+          <>
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
+                {t('settings.activitiesDesc')}
+              </p>
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              gap: 8, 
+              marginBottom: 16,
+              flexWrap: 'wrap'
+            }}>
+              {['all', 'login', 'purchase', 'settings', 'password'].map(filter => (
+                <button
+                  key={filter}
+                  className={`btn btn-sm ${activityFilter === filter ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setActivityFilter(filter)}
+                  style={{ textTransform: 'capitalize' }}
+                >
+                  {t(`settings.activity.${filter}`)}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {activities
+                .filter(act => activityFilter === 'all' || act.type === activityFilter)
+                .map(activity => (
+                  <div 
+                    key={activity.id}
+                    className="activity-item"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 12,
+                      padding: '14px 16px',
+                      background: 'var(--bg-secondary, rgba(124,58,237,0.04))',
+                      borderRadius: 10,
+                      border: '1px solid var(--border-color)',
+                    }}
+                  >
+                    <div style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: `${getActivityColor(activity.type)}15`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <FontAwesomeIcon 
+                        icon={getActivityIcon(activity.type)} 
+                        style={{ color: getActivityColor(activity.type), fontSize: '0.9rem' }} 
+                      />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: '0.92rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+                        {activity.description}
+                      </p>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {formatDate(activity.timestamp)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              
+              {activities.filter(act => activityFilter === 'all' || act.type === activityFilter).length === 0 && (
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '32px 16px', 
+                  color: 'var(--text-muted)',
+                  fontSize: '0.9rem'
+                }}>
+                  <FontAwesomeIcon icon={faClockRotateLeft} style={{ marginBottom: 8, opacity: 0.5 }} />
+                  <p>{t('settings.noActivities')}</p>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: 24, textAlign: 'center' }}>
+              <button 
+                className="btn btn-sm btn-secondary"
+                onClick={() => {
+                  if (window.confirm(t('settings.confirmClearActivities'))) {
+                    setActivities([]);
+                    toast.success(t('settings.activitiesCleared'));
+                  }
+                }}
+                style={{ color: '#ef4444' }}
+              >
+                {t('settings.clearActivityHistory')}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ABOUT US TAB */}
+        {tab === 'about' && (
+          <>
+            {/* App Header */}
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '24px 16px',
+              borderBottom: '1px solid var(--border-color)',
+              marginBottom: 24
+            }}>
+              <div style={{
+                width: 72,
+                height: 72,
+                borderRadius: 16,
+                background: 'linear-gradient(135deg, var(--accent-color, #7c3aed), #3b82f6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                boxShadow: '0 4px 14px rgba(124, 58, 237, 0.3)'
+              }}>
+                <FontAwesomeIcon icon={faStar} style={{ color: 'white', fontSize: '1.8rem' }} />
+              </div>
+              <h2 style={{ margin: '0 0 4px', fontSize: '1.3rem', fontWeight: 700 }}>
+                {t('about.appName')}
+              </h2>
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                {t('about.tagline')}
+              </p>
+              <span style={{ 
+                display: 'inline-block',
+                marginTop: 8,
+                padding: '4px 12px',
+                background: 'var(--bg-secondary)',
+                borderRadius: 20,
+                fontSize: '0.75rem',
+                color: 'var(--text-muted)'
+              }}>
+                v2.4.1 • {t('about.build')} 2026.04.04
+              </span>
+            </div>
+
+            {/* Company Info */}
+            <div style={{ marginBottom: 20 }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FontAwesomeIcon icon={faUsers} style={{ color: 'var(--accent-color, #7c3aed)' }} />
+                {t('about.company')}
+              </h3>
+              <div style={{ 
+                background: 'var(--bg-secondary)', 
+                borderRadius: 10, 
+                padding: '16px',
+                fontSize: '0.9rem',
+                lineHeight: 1.7,
+                color: 'var(--text-secondary)'
+              }}>
+                <p style={{ margin: '0 0 8px' }}><strong>{t('about.founded')}:</strong> {t('about.foundedYear')}</p>
+                <p style={{ margin: '0 0 8px' }}><strong>{t('about.location')}:</strong> {t('about.locationValue')}</p>
+                <p style={{ margin: 0 }}><strong>{t('about.mission')}:</strong> {t('about.missionText')}</p>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div style={{ marginBottom: 20 }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FontAwesomeIcon icon={faGlobe} style={{ color: 'var(--accent-color, #7c3aed)' }} />
+                {t('about.quickLinks')}
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { icon: faFileContract, label: t('settings.termsOfService'), action: () => setTab('policies') },
+                  { icon: faShieldHalved, label: t('settings.privacyPolicy'), action: () => setTab('policies') },
+                  { icon: faEnvelope, label: t('about.contactSupport'), action: () => window.location.href = 'mailto:support@qualityproducts.com' },
+                  { icon: faHandshake, label: t('about.partnerships'), action: () => window.location.href = 'mailto:partners@example.com' },
+                ].map((link, idx) => (
+                  <button
+                    key={idx}
+                    onClick={link.action}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 16px',
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      color: 'var(--text-primary)',
+                      textAlign: 'left',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-color, #7c3aed)10'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                  >
+                    <FontAwesomeIcon icon={link.icon} style={{ width: 18, color: 'var(--accent-color, #7c3aed)' }} />
+                    <span style={{ fontSize: '0.92rem', fontWeight: 500 }}>{link.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tech Stack */}
+            <div style={{ marginBottom: 20 }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FontAwesomeIcon icon={faCodeBranch} style={{ color: 'var(--accent-color, #7c3aed)' }} />
+                {t('about.builtWith')}
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {['Spring Boot', 'ReactJS', 'PostgreSQL', 'npm', 'i18next'].map((tech, idx) => (
+                  <span 
+                    key={idx}
+                    style={{
+                      padding: '6px 14px',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: 20,
+                      fontSize: '0.8rem',
+                      color: 'var(--text-muted)',
+                      border: '1px solid var(--border-color)'
+                    }}
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Report Issue - UPDATED GITHUB LINK */}
+            <div style={{ 
+              padding: '16px',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: 10,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12
+            }}>
+              <FontAwesomeIcon icon={faBug} style={{ color: '#ef4444', marginTop: 2 }} />
+              <div>
+                <p style={{ margin: '0 0 8px', fontSize: '0.92rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+                  {t('about.foundIssue')}
+                </p>
+                <button 
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => window.open('https://github.com/franklinsurya4/E-Commerce-SpringBoot-ReactJs', '_blank', 'noopener,noreferrer')}
+                  style={{ fontSize: '0.8rem' }}
+                >
+                  {t('about.reportBug')}
+                </button>
+              </div>
+            </div>
+
+            {/* Footer with Developer Credit */}
+            <div style={{ 
+              marginTop: 28,
+              textAlign: 'center',
+              padding: '16px',
+              color: 'var(--text-muted)',
+              fontSize: '0.8rem',
+              borderTop: '1px solid var(--border-color)'
+            }}>
+              <p style={{ margin: '0 0 4px' }}>
+                {t('about.copyright')}
+              </p>
+              <p style={{ margin: 0 }}>
+                {t('about.madeWith')} <FontAwesomeIcon icon={faHeart} style={{ color: '#ef4444' }} /> {t('about.forUsers')}
+              </p>
+              <p style={{ margin: '8px 0 0', fontSize: '0.75rem' }}>
+                {t('about.developer.label')}{' '}
+                <a 
+                  href={t('about.developer.linkedin')} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ 
+                    color: 'var(--accent-color, #7c3aed)', 
+                    textDecoration: 'none', 
+                    fontWeight: 500,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.textDecoration = 'underline';
+                    e.target.style.opacity = '0.85';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.textDecoration = 'none';
+                    e.target.style.opacity = '1';
+                  }}
+                >
+                  <FontAwesomeIcon icon={faLinkedin} style={{ fontSize: '0.8rem' }} />
+                  {t('about.developer.name')}
+                </a>
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* POLICIES TAB */}
         {tab === 'policies' && (
           <>
             <div style={{ marginBottom: 20 }}>

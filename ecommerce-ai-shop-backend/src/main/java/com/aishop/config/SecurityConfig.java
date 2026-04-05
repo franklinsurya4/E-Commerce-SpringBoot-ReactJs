@@ -55,6 +55,9 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         // Admin endpoints — require ADMIN role
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/user/push-subscription").authenticated()
+                        .requestMatchers("/api/wallet/**").authenticated()
+
                         // Everything else requires authentication
                         .anyRequest().authenticated()
                 )

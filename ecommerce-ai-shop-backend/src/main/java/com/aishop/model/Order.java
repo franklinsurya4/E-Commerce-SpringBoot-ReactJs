@@ -95,6 +95,6 @@ public class Order {
     }
 
     public enum PaymentMethod {
-        COD, CREDIT_CARD, STRIPE, PAYPAL, UPI
+        COD, CREDIT_CARD, STRIPE, PAYPAL, UPI,WALLET
     }
 }
